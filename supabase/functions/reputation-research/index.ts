@@ -10,34 +10,47 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { companyName, location, industry } = await req.json();
+    const { companyName, website, country, industry, timeRange, language, depth } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const systemPrompt = `You are a reputation research analyst. You perform deep analysis of companies' online reputation.
+    const langInstruction = language === 'ru' ? 'Отвечай на русском языке.' : language === 'en' ? 'Answer in English.' : 'Answer in the primary language of the company\'s market.';
+    const depthInstruction = depth === 'deep' ? 'Perform extremely thorough research across all categories. Provide maximum detail.' : depth === 'basic' ? 'Provide a concise overview of each category.' : 'Provide a balanced analysis with key details.';
+    const periodMonths = timeRange || '12';
 
-Given a company name, location, and industry, research and estimate the following metrics as accurately as possible:
+    const systemPrompt = `You are an elite reputation intelligence analyst conducting a comprehensive reputation audit.
 
-1. avgRating - Average Google review rating (0-5 scale, one decimal)
-2. totalReviews - Approximate total Google review count
-3. negativePercent - Estimated percentage of 1-2 star reviews (0-100)
-4. googleRanking - Estimated Google ranking position for branded search (1-10)
-5. negativePress - Whether there is negative press/media coverage (true/false)
-6. glassdoor - Employer sentiment on Glassdoor ("none", "mild", "strong")
-7. monthlyTraffic - Estimated monthly website traffic
-8. conversionRate - Estimated conversion rate percentage
-9. avgDealValue - Estimated average deal/transaction value in USD
+${langInstruction}
+${depthInstruction}
 
-For each metric, also provide a confidence level: "high", "medium", or "low".
-Add a brief comment explaining your reasoning for each estimate.
+Analyze the company over the last ${periodMonths} months. Research across: news media, review platforms, social media, YouTube/video, employer reputation (Glassdoor/HH.ru), forums (Reddit, VC.ru), legal records, and management reputation.
 
-IMPORTANT: 
-- Be realistic and conservative in your estimates
-- If you cannot find reliable information, say so and provide your best estimate with "low" confidence
-- Base estimates on industry benchmarks for the ${industry} sector in ${location}
-- Consider the company size, market position, and competitive landscape
+For each data point, base your analysis on real, verifiable information where possible. When estimating, clearly indicate confidence level.
 
-Respond using the suggest_metrics tool.`;
+You MUST respond using the deliver_audit tool with a complete structured JSON.
+
+Key guidelines:
+- overall_score: 0-100 where 0=catastrophic reputation, 100=perfect
+- Each source category gets a score /10
+- Sentiment must be: positive, neutral, negative, or mixed
+- Legal risk: low, medium, or high
+- ESG overall: clean, concerns, or serious_risks
+- All recommendations must be specific and actionable
+- Include real source names/URLs when possible
+- data_date should be today's date
+- sentiment_timeline should have monthly data points for the analysis period
+- red_flags and green_flags must be specific, not generic`;
+
+    const userMessage = `Conduct a full reputation audit for:
+Company: ${companyName}
+${website ? `Website: ${website}` : ''}
+${country ? `Country/Region: ${country}` : ''}
+${industry ? `Industry: ${industry}` : ''}
+
+Analysis period: last ${periodMonths} months
+Depth: ${depth || 'standard'}
+
+Provide comprehensive findings across all 10 audit categories.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -46,152 +59,197 @@ Respond using the suggest_metrics tool.`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
+        model: "openai/gpt-5",
         messages: [
           { role: "system", content: systemPrompt },
-          {
-            role: "user",
-            content: `Research the online reputation of: ${companyName}, located in ${location}, industry: ${industry}. Provide estimated reputation metrics with confidence levels.`,
-          },
+          { role: "user", content: userMessage },
         ],
         tools: [
           {
             type: "function",
             function: {
-              name: "suggest_metrics",
-              description: "Return estimated reputation metrics for the company",
+              name: "deliver_audit",
+              description: "Deliver the complete reputation audit results",
               parameters: {
                 type: "object",
                 properties: {
-                  metrics: {
+                  company: { type: "string" },
+                  overall_score: { type: "number", minimum: 0, maximum: 100 },
+                  verdict: { type: "string" },
+                  data_date: { type: "string" },
+                  summary: {
                     type: "object",
                     properties: {
-                      avgRating: {
-                        type: "object",
-                        properties: {
-                          value: { type: "number" },
-                          confidence: { type: "string", enum: ["high", "medium", "low"] },
-                          comment: { type: "string" },
-                        },
-                        required: ["value", "confidence", "comment"],
-                      },
-                      totalReviews: {
-                        type: "object",
-                        properties: {
-                          value: { type: "number" },
-                          confidence: { type: "string", enum: ["high", "medium", "low"] },
-                          comment: { type: "string" },
-                        },
-                        required: ["value", "confidence", "comment"],
-                      },
-                      negativePercent: {
-                        type: "object",
-                        properties: {
-                          value: { type: "number" },
-                          confidence: { type: "string", enum: ["high", "medium", "low"] },
-                          comment: { type: "string" },
-                        },
-                        required: ["value", "confidence", "comment"],
-                      },
-                      googleRanking: {
-                        type: "object",
-                        properties: {
-                          value: { type: "number" },
-                          confidence: { type: "string", enum: ["high", "medium", "low"] },
-                          comment: { type: "string" },
-                        },
-                        required: ["value", "confidence", "comment"],
-                      },
-                      negativePress: {
-                        type: "object",
-                        properties: {
-                          value: { type: "boolean" },
-                          confidence: { type: "string", enum: ["high", "medium", "low"] },
-                          comment: { type: "string" },
-                        },
-                        required: ["value", "confidence", "comment"],
-                      },
-                      glassdoor: {
-                        type: "object",
-                        properties: {
-                          value: { type: "string", enum: ["none", "mild", "strong"] },
-                          confidence: { type: "string", enum: ["high", "medium", "low"] },
-                          comment: { type: "string" },
-                        },
-                        required: ["value", "confidence", "comment"],
-                      },
-                      monthlyTraffic: {
-                        type: "object",
-                        properties: {
-                          value: { type: "number" },
-                          confidence: { type: "string", enum: ["high", "medium", "low"] },
-                          comment: { type: "string" },
-                        },
-                        required: ["value", "confidence", "comment"],
-                      },
-                      conversionRate: {
-                        type: "object",
-                        properties: {
-                          value: { type: "number" },
-                          confidence: { type: "string", enum: ["high", "medium", "low"] },
-                          comment: { type: "string" },
-                        },
-                        required: ["value", "confidence", "comment"],
-                      },
-                      avgDealValue: {
-                        type: "object",
-                        properties: {
-                          value: { type: "number" },
-                          confidence: { type: "string", enum: ["high", "medium", "low"] },
-                          comment: { type: "string" },
-                        },
-                        required: ["value", "confidence", "comment"],
-                      },
+                      main_activity: { type: "string" },
+                      key_narratives: { type: "array", items: { type: "string" } },
+                      key_event: { type: "string" },
                     },
-                    required: [
-                      "avgRating", "totalReviews", "negativePercent", "googleRanking",
-                      "negativePress", "glassdoor", "monthlyTraffic", "conversionRate", "avgDealValue",
-                    ],
+                    required: ["main_activity", "key_narratives", "key_event"],
                   },
-                  summary: { type: "string", description: "Brief overall assessment of the company's reputation" },
+                  sentiment_timeline: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        month: { type: "string" },
+                        positive: { type: "number" },
+                        neutral: { type: "number" },
+                        negative: { type: "number" },
+                        event: { type: "string" },
+                      },
+                      required: ["month", "positive", "neutral", "negative"],
+                    },
+                  },
+                  sources: {
+                    type: "object",
+                    properties: {
+                      media: { $ref: "#/$defs/source_category" },
+                      reviews: { $ref: "#/$defs/source_category" },
+                      social: { $ref: "#/$defs/source_category" },
+                      video: { $ref: "#/$defs/source_category" },
+                      employer: { $ref: "#/$defs/source_category" },
+                      forums: { $ref: "#/$defs/source_category" },
+                    },
+                    required: ["media", "reviews", "social", "video", "employer", "forums"],
+                  },
+                  legal: {
+                    type: "object",
+                    properties: {
+                      lawsuits: { type: "array", items: { type: "string" } },
+                      fines: { type: "array", items: { type: "string" } },
+                      complaints: { type: "array", items: { type: "string" } },
+                      risk_level: { type: "string", enum: ["low", "medium", "high"] },
+                      summary: { type: "string" },
+                    },
+                    required: ["lawsuits", "fines", "complaints", "risk_level", "summary"],
+                  },
+                  management: {
+                    type: "object",
+                    properties: {
+                      persons: {
+                        type: "array",
+                        items: {
+                          type: "object",
+                          properties: {
+                            name: { type: "string" },
+                            role: { type: "string" },
+                            sentiment: { type: "string", enum: ["positive", "neutral", "negative"] },
+                            summary: { type: "string" },
+                          },
+                          required: ["name", "role", "sentiment", "summary"],
+                        },
+                      },
+                      summary: { type: "string" },
+                    },
+                    required: ["persons", "summary"],
+                  },
+                  competitors: {
+                    type: "object",
+                    properties: {
+                      data: {
+                        type: "array",
+                        items: {
+                          type: "object",
+                          properties: {
+                            name: { type: "string" },
+                            mentions: { type: "number" },
+                            sentiment_score: { type: "number" },
+                          },
+                          required: ["name", "mentions", "sentiment_score"],
+                        },
+                      },
+                      summary: { type: "string" },
+                    },
+                    required: ["data", "summary"],
+                  },
+                  red_flags: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        text: { type: "string" },
+                        severity: { type: "string", enum: ["critical", "warning", "info"] },
+                      },
+                      required: ["text"],
+                    },
+                  },
+                  green_flags: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        text: { type: "string" },
+                      },
+                      required: ["text"],
+                    },
+                  },
+                  esg: {
+                    type: "object",
+                    properties: {
+                      ecology: { type: "string" },
+                      labor: { type: "string" },
+                      data_privacy: { type: "string" },
+                      overall: { type: "string", enum: ["clean", "concerns", "serious_risks"] },
+                      summary: { type: "string" },
+                    },
+                    required: ["ecology", "labor", "data_privacy", "overall", "summary"],
+                  },
+                  recommendations: {
+                    type: "object",
+                    properties: {
+                      urgent: { type: "array", items: { type: "string" } },
+                      mid_term: { type: "array", items: { type: "string" } },
+                      long_term: { type: "array", items: { type: "string" } },
+                    },
+                    required: ["urgent", "mid_term", "long_term"],
+                  },
+                  confidence: { type: "string", enum: ["high", "medium", "low"] },
                 },
-                required: ["metrics", "summary"],
-                additionalProperties: false,
+                required: [
+                  "company", "overall_score", "verdict", "data_date", "summary",
+                  "sentiment_timeline", "sources", "legal", "management", "competitors",
+                  "red_flags", "green_flags", "esg", "recommendations", "confidence",
+                ],
+                $defs: {
+                  source_category: {
+                    type: "object",
+                    properties: {
+                      score: { type: "number" },
+                      sentiment: { type: "string", enum: ["positive", "neutral", "negative", "mixed"] },
+                      summary: { type: "string" },
+                      mention_count: { type: "number" },
+                      avg_rating: { type: "number" },
+                      top_topics: { type: "array", items: { type: "string" } },
+                    },
+                    required: ["score", "sentiment", "summary"],
+                  },
+                },
               },
             },
           },
         ],
-        tool_choice: { type: "function", function: { name: "suggest_metrics" } },
+        tool_choice: { type: "function", function: { name: "deliver_audit" } },
       }),
     });
 
     if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted. Please add credits." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
       const t = await response.text();
       console.error("AI gateway error:", response.status, t);
-      return new Response(JSON.stringify({ error: "AI research failed" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      if (response.status === 429) {
+        return new Response(JSON.stringify({ error: "Превышен лимит запросов. Попробуйте позже." }), {
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify({ error: "Ошибка анализа" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const data = await response.json();
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
     if (!toolCall) {
-      return new Response(JSON.stringify({ error: "No research data returned" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      return new Response(JSON.stringify({ error: "Не удалось получить результаты анализа" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
