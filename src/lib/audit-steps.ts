@@ -12,4 +12,4 @@ export const ANALYSIS_STEPS: AnalysisStep[] = [
   { id: 'ltv',         label: 'step_ltv',         status: 'pending' },
   { id: 'competitors', label: 'step_competitors', status: 'pending' },
   { id: 'score',       label: 'step_score',       status: 'pending' },
-];
+]; 
