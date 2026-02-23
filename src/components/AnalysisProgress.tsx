@@ -1,16 +1,18 @@
-import { AnalysisStep } from '@/lib/types';
+import { AnalysisStep, AppLanguage } from '@/lib/types';
+import { t, TranslationKey } from '@/lib/i18n';
 import { motion } from 'framer-motion';
 import { Check, Loader2, Circle } from 'lucide-react';
 
 interface Props {
   steps: AnalysisStep[];
+  lang: AppLanguage;
 }
 
-export default function AnalysisProgress({ steps }: Props) {
+export default function AnalysisProgress({ steps, lang }: Props) {
   return (
     <div className="bg-card border border-border rounded-xl p-8">
       <h3 className="text-lg font-semibold mb-6 text-center" style={{ fontFamily: "'Playfair Display', serif" }}>
-        Анализ в процессе...
+        {t(lang, 'progress_title')}
       </h3>
       <div className="max-w-md mx-auto space-y-3">
         {steps.map((step, i) => (
@@ -18,7 +20,7 @@ export default function AnalysisProgress({ steps }: Props) {
             key={step.id}
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.1, duration: 0.3 }}
+            transition={{ delay: i * 0.08, duration: 0.3 }}
             className="flex items-center gap-3"
           >
             <div className="w-6 h-6 flex items-center justify-center">
@@ -27,22 +29,17 @@ export default function AnalysisProgress({ steps }: Props) {
                   <Check className="h-5 w-5 text-success" />
                 </motion.div>
               )}
-              {step.status === 'active' && (
-                <Loader2 className="h-5 w-5 text-primary animate-spin" />
-              )}
-              {step.status === 'pending' && (
-                <Circle className="h-4 w-4 text-muted-foreground/30" />
-              )}
-              {step.status === 'error' && (
-                <span className="text-destructive text-sm">✕</span>
-              )}
+              {step.status === 'active' && <Loader2 className="h-5 w-5 text-primary animate-spin" />}
+              {step.status === 'pending' && <Circle className="h-4 w-4 text-muted-foreground/30" />}
+              {step.status === 'error' && <span className="text-destructive text-sm">✕</span>}
             </div>
             <span className={`text-sm font-mono ${
               step.status === 'done' ? 'text-foreground' :
               step.status === 'active' ? 'text-primary' :
               'text-muted-foreground/50'
             }`}>
-              {step.label}
+              {/* step.label stores the i18n key */}
+              {t(lang, step.label as TranslationKey)}
             </span>
           </motion.div>
         ))}
