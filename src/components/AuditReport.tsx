@@ -1,4 +1,4 @@
-import { AuditResponse } from '@/lib/types';
+import { AuditResponse, AppLanguage } from '@/lib/types';
 import { motion } from 'framer-motion';
 import ScoreHero from './report/ScoreHero';
 import SummaryCard from './report/SummaryCard';
@@ -13,6 +13,7 @@ import RecommendationsSection from './report/RecommendationsSection';
 
 interface Props {
   data: AuditResponse;
+  lang: AppLanguage;
 }
 
 const stagger = {
@@ -25,7 +26,7 @@ const fadeUp = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
 };
 
-export default function AuditReport({ data }: Props) {
+export default function AuditReport({ data, lang }: Props) {
   return (
     <motion.div
       variants={stagger}
@@ -33,16 +34,16 @@ export default function AuditReport({ data }: Props) {
       animate="visible"
       className="space-y-6"
     >
-      <motion.div variants={fadeUp}><ScoreHero score={data.overall_score} verdict={data.verdict} dataDate={data.data_date} confidence={data.confidence} /></motion.div>
-      <motion.div variants={fadeUp}><SummaryCard summary={data.summary} company={data.company} /></motion.div>
-      <motion.div variants={fadeUp}><SentimentTimeline data={data.sentiment_timeline} /></motion.div>
-      <motion.div variants={fadeUp}><SourceAnalysis sources={data.sources} /></motion.div>
-      <motion.div variants={fadeUp}><LegalSection legal={data.legal} /></motion.div>
-      <motion.div variants={fadeUp}><ManagementSection management={data.management} /></motion.div>
-      <motion.div variants={fadeUp}><CompetitorSection competitors={data.competitors} company={data.company} /></motion.div>
-      <motion.div variants={fadeUp}><FlagsSection redFlags={data.red_flags} greenFlags={data.green_flags} /></motion.div>
-      <motion.div variants={fadeUp}><ESGSection esg={data.esg} /></motion.div>
-      <motion.div variants={fadeUp}><RecommendationsSection recommendations={data.recommendations} /></motion.div>
+      <motion.div variants={fadeUp}><ScoreHero score={data.overall_score} verdict={data.verdict} dataDate={data.data_date} confidence={data.confidence} lang={lang} /></motion.div>
+      <motion.div variants={fadeUp}><SummaryCard summary={data.summary} company={data.company} lang={lang} /></motion.div>
+      <motion.div variants={fadeUp}><SentimentTimeline data={data.sentiment_timeline} lang={lang} /></motion.div>
+      <motion.div variants={fadeUp}><SourceAnalysis sources={data.sources} lang={lang} /></motion.div>
+      <motion.div variants={fadeUp}><LegalSection legal={data.legal} lang={lang} /></motion.div>
+      <motion.div variants={fadeUp}><ManagementSection management={data.management} lang={lang} /></motion.div>
+      <motion.div variants={fadeUp}><CompetitorSection competitors={data.competitors} company={data.company} lang={lang} /></motion.div>
+      <motion.div variants={fadeUp}><FlagsSection redFlags={data.red_flags} greenFlags={data.green_flags} lang={lang} /></motion.div>
+      <motion.div variants={fadeUp}><ESGSection esg={data.esg} lang={lang} /></motion.div>
+      <motion.div variants={fadeUp}><RecommendationsSection recommendations={data.recommendations} lang={lang} /></motion.div>
     </motion.div>
   );
 }

@@ -27,7 +27,6 @@ const Index = () => {
   const [steps, setSteps] = useState<AnalysisStep[]>([]);
   const [showOnboarding, setShowOnboarding] = useState(true);
 
-  // 11 steps spread over ~60s
   const simulateProgress = useCallback(() => {
     const newSteps = ANALYSIS_STEPS.map(s => ({ ...s }));
     setSteps(newSteps);
@@ -95,7 +94,6 @@ const Index = () => {
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-background">
-        {/* Nav */}
         <header className="border-b border-border bg-card/50 backdrop-blur-md sticky top-0 z-50">
           <div className="max-w-6xl mx-auto px-6 flex items-center justify-between h-14">
             <div className="flex items-center gap-2">
@@ -121,7 +119,6 @@ const Index = () => {
                 </button>
               </nav>
 
-              {/* Language switcher */}
               <div className="flex items-center gap-0.5 bg-secondary/50 rounded-lg p-0.5">
                 {LANG_OPTIONS.map(opt => (
                   <button
@@ -144,7 +141,6 @@ const Index = () => {
 
         {activeTab === 'audit' ? (
           <main className="max-w-6xl mx-auto px-6 py-8">
-            {/* Onboarding */}
             {showOnboarding && !result && !isLoading && (
               <div className="text-center mb-8 py-12">
                 <h1 className="text-3xl md:text-4xl font-bold mb-3" style={{ fontFamily: "'Playfair Display', serif" }}>
@@ -154,19 +150,16 @@ const Index = () => {
               </div>
             )}
 
-            {/* Form */}
             <div className="bg-card border border-border rounded-xl p-6 mb-8">
               <AuditForm onSubmit={handleSubmit} isLoading={isLoading} lang={lang} />
             </div>
 
-            {/* Progress */}
             {isLoading && (
               <div className="mb-8">
                 <AnalysisProgress steps={steps} lang={lang} />
               </div>
             )}
 
-            {/* Results */}
             {result && !isLoading && (
               <>
                 <div className="flex flex-wrap justify-end gap-2 mb-4">

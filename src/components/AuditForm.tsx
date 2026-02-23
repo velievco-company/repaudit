@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { AuditFormInput } from '@/lib/types';
+import { AuditFormInput, AppLanguage } from '@/lib/types';
+import { t } from '@/lib/i18n';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown, ChevronUp, Search } from 'lucide-react';
@@ -10,17 +12,26 @@ import { ChevronDown, ChevronUp, Search } from 'lucide-react';
 interface AuditFormProps {
   onSubmit: (data: AuditFormInput) => void;
   isLoading?: boolean;
+  lang: AppLanguage;
 }
 
-export default function AuditForm({ onSubmit, isLoading }: AuditFormProps) {
+export default function AuditForm({ onSubmit, isLoading, lang }: AuditFormProps) {
   const [companyName, setCompanyName] = useState('');
   const [website, setWebsite] = useState('');
   const [country, setCountry] = useState('');
   const [industry, setIndustry] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [showExtended, setShowExtended] = useState(false);
   const [timeRange, setTimeRange] = useState<AuditFormInput['timeRange']>('12');
   const [language, setLanguage] = useState<AuditFormInput['language']>('all');
   const [depth, setDepth] = useState<AuditFormInput['depth']>('standard');
+  const [targetAudience, setTargetAudience] = useState('');
+  const [companyStage, setCompanyStage] = useState('');
+  const [knownCompetitors, setKnownCompetitors] = useState('');
+  const [ltv, setLtv] = useState('');
+  const [cac, setCac] = useState('');
+  const [retentionRate, setRetentionRate] = useState('');
+  const [additionalContext, setAdditionalContext] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +44,13 @@ export default function AuditForm({ onSubmit, isLoading }: AuditFormProps) {
       timeRange,
       language,
       depth,
+      targetAudience: targetAudience.trim() || undefined,
+      companyStage: companyStage || undefined,
+      knownCompetitors: knownCompetitors.trim() || undefined,
+      ltv: ltv.trim() || undefined,
+      cac: cac.trim() || undefined,
+      retentionRate: retentionRate.trim() || undefined,
+      additionalContext: additionalContext.trim() || undefined,
     });
   };
 
@@ -41,73 +59,75 @@ export default function AuditForm({ onSubmit, isLoading }: AuditFormProps) {
       <div className="flex flex-col md:flex-row gap-3">
         <div className="flex-1 space-y-2">
           <Label htmlFor="company" className="text-xs uppercase tracking-wider text-muted-foreground font-mono">
-            Название компании *
+            {t(lang, 'form_company')}
           </Label>
           <Input
             id="company"
             value={companyName}
             onChange={e => setCompanyName(e.target.value)}
-            placeholder="Введите название компании"
+            placeholder={t(lang, 'form_company_placeholder')}
             required
             className="h-12 text-base bg-background border-border/50 focus:border-primary"
           />
         </div>
         <div className="flex gap-3">
           <div className="space-y-2 flex-1 md:w-48">
-            <Label className="text-xs uppercase tracking-wider text-muted-foreground font-mono">Сайт</Label>
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground font-mono">{t(lang, 'form_website')}</Label>
             <Input value={website} onChange={e => setWebsite(e.target.value)} placeholder="example.com" className="h-12 bg-background border-border/50" />
           </div>
           <div className="space-y-2 flex-1 md:w-40">
-            <Label className="text-xs uppercase tracking-wider text-muted-foreground font-mono">Страна</Label>
-            <Input value={country} onChange={e => setCountry(e.target.value)} placeholder="Россия" className="h-12 bg-background border-border/50" />
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground font-mono">{t(lang, 'form_country')}</Label>
+            <Input value={country} onChange={e => setCountry(e.target.value)} placeholder={t(lang, 'form_country_placeholder')} className="h-12 bg-background border-border/50" />
           </div>
           <div className="space-y-2 flex-1 md:w-40">
-            <Label className="text-xs uppercase tracking-wider text-muted-foreground font-mono">Отрасль</Label>
-            <Input value={industry} onChange={e => setIndustry(e.target.value)} placeholder="Финтех" className="h-12 bg-background border-border/50" />
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground font-mono">{t(lang, 'form_industry')}</Label>
+            <Input value={industry} onChange={e => setIndustry(e.target.value)} placeholder={t(lang, 'form_industry_placeholder')} className="h-12 bg-background border-border/50" />
           </div>
         </div>
       </div>
 
+      {/* Analysis Parameters */}
       <Collapsible open={showFilters} onOpenChange={setShowFilters}>
         <CollapsibleTrigger asChild>
           <button type="button" className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors font-mono uppercase tracking-wider">
-            Параметры анализа
+            {t(lang, 'form_analysis_params')}
             {showFilters ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
           </button>
         </CollapsibleTrigger>
         <CollapsibleContent className="pt-4">
           <div className="flex flex-wrap gap-4">
             <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground font-mono">Период</Label>
+              <Label className="text-xs text-muted-foreground font-mono">{t(lang, 'form_period')}</Label>
               <Select value={timeRange} onValueChange={v => setTimeRange(v as AuditFormInput['timeRange'])}>
                 <SelectTrigger className="w-36 bg-background"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="3">3 месяца</SelectItem>
-                  <SelectItem value="6">6 месяцев</SelectItem>
-                  <SelectItem value="12">12 месяцев</SelectItem>
-                  <SelectItem value="24">24 месяца</SelectItem>
+                  <SelectItem value="3">{t(lang, 'form_period_3')}</SelectItem>
+                  <SelectItem value="6">{t(lang, 'form_period_6')}</SelectItem>
+                  <SelectItem value="12">{t(lang, 'form_period_12')}</SelectItem>
+                  <SelectItem value="24">{t(lang, 'form_period_24')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground font-mono">Язык</Label>
+              <Label className="text-xs text-muted-foreground font-mono">{t(lang, 'form_lang')}</Label>
               <Select value={language} onValueChange={v => setLanguage(v as AuditFormInput['language'])}>
                 <SelectTrigger className="w-36 bg-background"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ru">Русский</SelectItem>
-                  <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="all">Все языки</SelectItem>
+                  <SelectItem value="ru">{t(lang, 'form_lang_ru')}</SelectItem>
+                  <SelectItem value="en">{t(lang, 'form_lang_en')}</SelectItem>
+                  <SelectItem value="es">{t(lang, 'form_lang_es')}</SelectItem>
+                  <SelectItem value="all">{t(lang, 'form_lang_all')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground font-mono">Глубина</Label>
+              <Label className="text-xs text-muted-foreground font-mono">{t(lang, 'form_depth')}</Label>
               <Select value={depth} onValueChange={v => setDepth(v as AuditFormInput['depth'])}>
                 <SelectTrigger className="w-36 bg-background"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="basic">Базовый</SelectItem>
-                  <SelectItem value="standard">Стандартный</SelectItem>
-                  <SelectItem value="deep">Глубокий</SelectItem>
+                  <SelectItem value="basic">{t(lang, 'form_depth_basic')}</SelectItem>
+                  <SelectItem value="standard">{t(lang, 'form_depth_standard')}</SelectItem>
+                  <SelectItem value="deep">{t(lang, 'form_depth_deep')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -115,9 +135,62 @@ export default function AuditForm({ onSubmit, isLoading }: AuditFormProps) {
         </CollapsibleContent>
       </Collapsible>
 
+      {/* Extended Company Profile */}
+      <Collapsible open={showExtended} onOpenChange={setShowExtended}>
+        <CollapsibleTrigger asChild>
+          <button type="button" className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors font-mono uppercase tracking-wider">
+            {t(lang, 'form_extended_profile')}
+            {showExtended ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="pt-4 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground font-mono">{t(lang, 'form_target_audience')}</Label>
+              <Input value={targetAudience} onChange={e => setTargetAudience(e.target.value)} placeholder={t(lang, 'form_target_placeholder')} className="bg-background border-border/50" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground font-mono">{t(lang, 'form_stage')}</Label>
+              <Select value={companyStage} onValueChange={setCompanyStage}>
+                <SelectTrigger className="bg-background"><SelectValue placeholder="—" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="preseed">{t(lang, 'form_stage_preseed')}</SelectItem>
+                  <SelectItem value="seed">{t(lang, 'form_stage_seed')}</SelectItem>
+                  <SelectItem value="seriesa">{t(lang, 'form_stage_seriesa')}</SelectItem>
+                  <SelectItem value="growth">{t(lang, 'form_stage_growth')}</SelectItem>
+                  <SelectItem value="public">{t(lang, 'form_stage_public')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground font-mono">{t(lang, 'form_competitors')}</Label>
+            <Input value={knownCompetitors} onChange={e => setKnownCompetitors(e.target.value)} placeholder={t(lang, 'form_competitors_placeholder')} className="bg-background border-border/50" />
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground font-mono">{t(lang, 'form_ltv')}</Label>
+              <Input value={ltv} onChange={e => setLtv(e.target.value)} placeholder="5000" className="bg-background border-border/50" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground font-mono">{t(lang, 'form_cac')}</Label>
+              <Input value={cac} onChange={e => setCac(e.target.value)} placeholder="500" className="bg-background border-border/50" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground font-mono">{t(lang, 'form_retention')}</Label>
+              <Input value={retentionRate} onChange={e => setRetentionRate(e.target.value)} placeholder="85" className="bg-background border-border/50" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground font-mono">{t(lang, 'form_context')}</Label>
+            <Textarea value={additionalContext} onChange={e => setAdditionalContext(e.target.value)} placeholder={t(lang, 'form_context_placeholder')} className="bg-background border-border/50 min-h-[80px]" />
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+
       <Button type="submit" className="w-full h-12 text-base font-semibold gap-2" disabled={isLoading || !companyName.trim()}>
         <Search className="h-4 w-4" />
-        Запустить аудит
+        {t(lang, 'form_submit')}
       </Button>
     </form>
   );

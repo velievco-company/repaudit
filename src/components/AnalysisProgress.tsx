@@ -1,16 +1,18 @@
-import { AnalysisStep } from '@/lib/types';
+import { AnalysisStep, AppLanguage } from '@/lib/types';
+import { t } from '@/lib/i18n';
 import { motion } from 'framer-motion';
 import { Check, Loader2, Circle } from 'lucide-react';
 
 interface Props {
   steps: AnalysisStep[];
+  lang: AppLanguage;
 }
 
-export default function AnalysisProgress({ steps }: Props) {
+export default function AnalysisProgress({ steps, lang }: Props) {
   return (
     <div className="bg-card border border-border rounded-xl p-8">
       <h3 className="text-lg font-semibold mb-6 text-center" style={{ fontFamily: "'Playfair Display', serif" }}>
-        Анализ в процессе...
+        {t(lang, 'progress_title')}
       </h3>
       <div className="max-w-md mx-auto space-y-3">
         {steps.map((step, i) => (
@@ -27,22 +29,16 @@ export default function AnalysisProgress({ steps }: Props) {
                   <Check className="h-5 w-5 text-success" />
                 </motion.div>
               )}
-              {step.status === 'active' && (
-                <Loader2 className="h-5 w-5 text-primary animate-spin" />
-              )}
-              {step.status === 'pending' && (
-                <Circle className="h-4 w-4 text-muted-foreground/30" />
-              )}
-              {step.status === 'error' && (
-                <span className="text-destructive text-sm">✕</span>
-              )}
+              {step.status === 'active' && <Loader2 className="h-5 w-5 text-primary animate-spin" />}
+              {step.status === 'pending' && <Circle className="h-4 w-4 text-muted-foreground/30" />}
+              {step.status === 'error' && <span className="text-destructive text-sm">✕</span>}
             </div>
             <span className={`text-sm font-mono ${
               step.status === 'done' ? 'text-foreground' :
               step.status === 'active' ? 'text-primary' :
               'text-muted-foreground/50'
             }`}>
-              {step.label}
+              {t(lang, step.label as any)}
             </span>
           </motion.div>
         ))}

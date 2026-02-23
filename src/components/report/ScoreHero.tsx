@@ -1,10 +1,12 @@
-import { ConfidenceLevel } from '@/lib/types';
+import { ConfidenceLevel, AppLanguage } from '@/lib/types';
+import { t } from '@/lib/i18n';
 
 interface Props {
   score: number;
   verdict: string;
   dataDate: string;
   confidence: ConfidenceLevel;
+  lang: AppLanguage;
 }
 
 function getScoreColor(score: number) {
@@ -14,23 +16,11 @@ function getScoreColor(score: number) {
   return 'text-red-400';
 }
 
-function getScoreBg(score: number) {
-  if (score >= 86) return 'from-emerald-500/20 to-emerald-500/5';
-  if (score >= 66) return 'from-green-500/20 to-green-500/5';
-  if (score >= 41) return 'from-amber-500/20 to-amber-500/5';
-  return 'from-red-500/20 to-red-500/5';
-}
-
-function getScoreRing(score: number) {
-  if (score >= 86) return 'border-emerald-400';
-  if (score >= 66) return 'border-green-400';
-  if (score >= 41) return 'border-amber-400';
-  return 'border-red-400';
-}
-
-export default function ScoreHero({ score, verdict, dataDate, confidence }: Props) {
+export default function ScoreHero({ score, verdict, dataDate, confidence, lang }: Props) {
   const circumference = 2 * Math.PI * 54;
   const offset = circumference - (score / 100) * circumference;
+
+  const confLabel = t(lang, confidence === 'high' ? 'confidence_high' : confidence === 'medium' ? 'confidence_medium' : 'confidence_low');
 
   return (
     <div className="bg-card border border-border rounded-xl p-8 text-center">
@@ -55,10 +45,10 @@ export default function ScoreHero({ score, verdict, dataDate, confidence }: Prop
         <div>
           <h2 className="text-xl font-semibold mb-1" style={{ fontFamily: "'Playfair Display', serif" }}>{verdict}</h2>
           <div className="flex items-center justify-center gap-3 text-xs text-muted-foreground font-mono">
-            <span>Данные на {dataDate}</span>
+            <span>{t(lang, 'data_as_of')} {dataDate}</span>
             <span>·</span>
             <span className={confidence === 'high' ? 'text-success' : confidence === 'medium' ? 'text-warning' : 'text-destructive'}>
-              Достоверность: {confidence === 'high' ? 'Высокая' : confidence === 'medium' ? 'Средняя' : 'Низкая'}
+              {t(lang, 'confidence_label')}: {confLabel}
             </span>
           </div>
         </div>
