@@ -9,7 +9,7 @@ export const translations = {
 
     // Onboarding
     onboarding_title: 'Reputation Audit',
-    onboarding_sub: 'Enter a company name and we'll run a full reputation audit in 60 seconds',
+    onboarding_sub: "Enter a company name and we'll run a full reputation audit in 60 seconds",
 
     // Form
     form_company: 'Company Name *',
