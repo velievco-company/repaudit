@@ -1,4 +1,5 @@
 export type ConfidenceLevel = 'high' | 'medium' | 'low';
+export type AppLanguage = 'en' | 'ru' | 'es';
 
 export interface SourceItem {
   title: string;
@@ -46,6 +47,101 @@ export interface CompetitorData {
   mentions: number;
   sentiment_score: number;
 }
+
+// ── New v2 interfaces ──────────────────────────────────────────────────
+
+export interface NegativeExposureItem {
+  source: string;
+  type: string;
+  severity: string;
+  visibility: string;
+  action: string;
+  summary: string;
+}
+
+export interface NegativeExposure {
+  total_critical: number;
+  summary: string;
+  items: NegativeExposureItem[];
+}
+
+export interface TrustSignalItem {
+  name: string;
+  status: string;
+  impact: string;
+  note?: string;
+}
+
+export interface TrustSignals {
+  score: number;
+  summary: string;
+  items: TrustSignalItem[];
+}
+
+export interface FunnelStep {
+  step: string;
+  risk: string;
+  drop_off_pct: number;
+  note?: string;
+}
+
+export interface FunnelAnalysis {
+  total_estimated_loss_pct: number;
+  summary: string;
+  steps: FunnelStep[];
+}
+
+export interface SentimentHeatmapRow {
+  theme: string;
+  positive_pct: number;
+  neutral_pct: number;
+  negative_pct: number;
+  risk: string;
+}
+
+export interface LTVRoiModel {
+  ltv: number;
+  cac: number;
+  retention_rate: number;
+  churn_from_reviews_pct: number;
+  estimated_annual_loss_min: number;
+  estimated_annual_loss_max: number;
+  loss_explanation: string;
+}
+
+export interface CompetitiveTrustScore {
+  competitor: string;
+  review_volume_ratio: number;
+  authority_score: number;
+  media_mentions_score: number;
+  clinical_authority_score: number;
+  overall_tier: string;
+}
+
+export interface CompetitiveTrust {
+  company_tier: string;
+  summary: string;
+  scores: CompetitiveTrustScore[];
+}
+
+export interface PriorityMatrixItem {
+  action: string;
+  impact: string;
+  effort: string;
+  priority: string;
+  category?: string;
+}
+
+export interface TrajectoryForecast {
+  current_rating: number;
+  unmanaged_6mo: number;
+  optimised_6mo: number;
+  unmanaged_12mo: number;
+  optimised_12mo: number;
+  key_assumptions: string[];
+}
+
+// ── Main response ──────────────────────────────────────────────────────
 
 export interface AuditResponse {
   company: string;
@@ -96,6 +192,16 @@ export interface AuditResponse {
     long_term: string[];
   };
   confidence: ConfidenceLevel;
+
+  // v2 optional sections
+  negative_exposure?: NegativeExposure;
+  trust_signals?: TrustSignals;
+  funnel_analysis?: FunnelAnalysis;
+  sentiment_heatmap?: SentimentHeatmapRow[];
+  ltv_roi_model?: LTVRoiModel;
+  competitive_trust?: CompetitiveTrust;
+  priority_matrix?: PriorityMatrixItem[];
+  trajectory?: TrajectoryForecast;
 }
 
 export interface AuditFormInput {
@@ -104,8 +210,15 @@ export interface AuditFormInput {
   country?: string;
   industry?: string;
   timeRange: '3' | '6' | '12' | '24';
-  language: 'ru' | 'en' | 'all';
+  language: 'ru' | 'en' | 'es' | 'all';
   depth: 'basic' | 'standard' | 'deep';
+  targetAudience?: string;
+  companyStage?: string;
+  knownCompetitors?: string;
+  ltv?: string;
+  cac?: string;
+  retentionRate?: string;
+  additionalContext?: string;
 }
 
 export interface AnalysisStep {
