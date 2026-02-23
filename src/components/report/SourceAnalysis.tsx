@@ -1,14 +1,25 @@
-import { SourceCategory, AppLanguage } from '@/lib/types';
-import { t } from '@/lib/i18n';
+import { SourceCategory } from '@/lib/types';
 import { Newspaper, MessageSquare, Smartphone, Video, Briefcase, Search } from 'lucide-react';
 
 interface Props {
   sources: {
-    media: SourceCategory; reviews: SourceCategory; social: SourceCategory;
-    video: SourceCategory; employer: SourceCategory; forums: SourceCategory;
+    media: SourceCategory;
+    reviews: SourceCategory;
+    social: SourceCategory;
+    video: SourceCategory;
+    employer: SourceCategory;
+    forums: SourceCategory;
   };
-  lang: AppLanguage;
 }
+
+const sourceConfig = [
+  { key: 'media' as const, icon: Newspaper, label: 'СМИ и новости', emoji: '📰' },
+  { key: 'reviews' as const, icon: MessageSquare, label: 'Отзывные платформы', emoji: '💬' },
+  { key: 'social' as const, icon: Smartphone, label: 'Социальные сети', emoji: '📱' },
+  { key: 'video' as const, icon: Video, label: 'YouTube / Видео', emoji: '🎥' },
+  { key: 'employer' as const, icon: Briefcase, label: 'Работодательская репутация', emoji: '💼' },
+  { key: 'forums' as const, icon: Search, label: 'Форумы и сообщества', emoji: '🔎' },
+];
 
 function sentimentColor(s: string) {
   if (s === 'positive') return 'text-success';
@@ -17,34 +28,25 @@ function sentimentColor(s: string) {
   return 'text-muted-foreground';
 }
 
+function sentimentLabel(s: string) {
+  if (s === 'positive') return 'Позитивный';
+  if (s === 'negative') return 'Негативный';
+  if (s === 'mixed') return 'Смешанный';
+  return 'Нейтральный';
+}
+
 function scoreColor(score: number) {
   if (score >= 8) return 'text-success';
   if (score >= 5) return 'text-warning';
   return 'text-destructive';
 }
 
-export default function SourceAnalysis({ sources, lang }: Props) {
-  const sourceConfig = [
-    { key: 'media' as const, labelKey: 'source_media' as const, emoji: '📰' },
-    { key: 'reviews' as const, labelKey: 'source_reviews' as const, emoji: '💬' },
-    { key: 'social' as const, labelKey: 'source_social' as const, emoji: '📱' },
-    { key: 'video' as const, labelKey: 'source_video' as const, emoji: '🎥' },
-    { key: 'employer' as const, labelKey: 'source_employer' as const, emoji: '💼' },
-    { key: 'forums' as const, labelKey: 'source_forums' as const, emoji: '🔎' },
-  ];
-
-  const sentimentLabel = (s: string) => {
-    if (s === 'positive') return t(lang, 'sentiment_positive');
-    if (s === 'negative') return t(lang, 'sentiment_negative');
-    if (s === 'mixed') return t(lang, 'sentiment_mixed');
-    return t(lang, 'sentiment_neutral');
-  };
-
+export default function SourceAnalysis({ sources }: Props) {
   return (
     <div className="bg-card border border-border rounded-xl p-6">
-      <h3 className="text-sm font-mono uppercase tracking-wider text-muted-foreground mb-4">{t(lang, 'section_sources')}</h3>
+      <h3 className="text-sm font-mono uppercase tracking-wider text-muted-foreground mb-4">Анализ по источникам</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {sourceConfig.map(({ key, labelKey, emoji }) => {
+        {sourceConfig.map(({ key, label, emoji }) => {
           const src = sources[key];
           if (!src) return null;
           return (
@@ -52,22 +54,20 @@ export default function SourceAnalysis({ sources, lang }: Props) {
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <span className="text-lg">{emoji}</span>
-                  <span className="text-sm font-medium">{t(lang, labelKey)}</span>
+                  <span className="text-sm font-medium">{label}</span>
                 </div>
-                <span className={`text-xl font-bold font-mono ${scoreColor(src.score)}`}>
-                  {src.score}<span className="text-xs text-muted-foreground">/10</span>
-                </span>
+                <span className={`text-xl font-bold font-mono ${scoreColor(src.score)}`}>{src.score}<span className="text-xs text-muted-foreground">/10</span></span>
               </div>
               <p className="text-xs text-muted-foreground mb-2 leading-relaxed">{src.summary}</p>
               <div className="flex items-center gap-3 text-xs">
                 <span className={sentimentColor(src.sentiment)}>● {sentimentLabel(src.sentiment)}</span>
-                {src.mention_count && <span className="text-muted-foreground">{src.mention_count} {t(lang, 'mentions')}</span>}
+                {src.mention_count && <span className="text-muted-foreground">{src.mention_count} упоминаний</span>}
                 {src.avg_rating && <span className="text-muted-foreground">★ {src.avg_rating}</span>}
               </div>
               {src.top_topics && src.top_topics.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-2">
-                  {src.top_topics.map((topic, i) => (
-                    <span key={i} className="text-[10px] px-2 py-0.5 bg-muted rounded-full text-muted-foreground">{topic}</span>
+                  {src.top_topics.map((t, i) => (
+                    <span key={i} className="text-[10px] px-2 py-0.5 bg-muted rounded-full text-muted-foreground">{t}</span>
                   ))}
                 </div>
               )}

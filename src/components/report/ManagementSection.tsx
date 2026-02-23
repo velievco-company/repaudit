@@ -1,8 +1,8 @@
-// ManagementSection.tsx
-import { AuditResponse, AppLanguage } from '@/lib/types';
-import { t } from '@/lib/i18n';
+import { AuditResponse } from '@/lib/types';
 
-interface Props { management: AuditResponse['management']; lang: AppLanguage; }
+interface Props {
+  management: AuditResponse['management'];
+}
 
 function sentimentDot(s: string) {
   if (s === 'positive') return 'bg-success';
@@ -10,10 +10,10 @@ function sentimentDot(s: string) {
   return 'bg-muted-foreground';
 }
 
-export default function ManagementSection({ management, lang }: Props) {
+export default function ManagementSection({ management }: Props) {
   return (
     <div className="bg-card border border-border rounded-xl p-6">
-      <h3 className="text-sm font-mono uppercase tracking-wider text-muted-foreground mb-4">{t(lang, 'section_management')}</h3>
+      <h3 className="text-sm font-mono uppercase tracking-wider text-muted-foreground mb-4">👤 Репутация топ-менеджмента</h3>
       <p className="text-sm text-muted-foreground mb-4">{management.summary}</p>
       {management.persons.length > 0 && (
         <div className="space-y-3">

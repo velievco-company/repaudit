@@ -1,37 +1,26 @@
-import { useState, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import AuditForm from '@/components/AuditForm';
 import AuditReport from '@/components/AuditReport';
 import AnalysisProgress from '@/components/AnalysisProgress';
-import { AuditFormInput, AuditResponse, AnalysisStep, AppLanguage } from '@/lib/types';
+import { AuditFormInput, AuditResponse, AnalysisStep } from '@/lib/types';
 import { ANALYSIS_STEPS } from '@/lib/audit-steps';
-import { t } from '@/lib/i18n';
-import { copyMarkdownToClipboard, downloadMarkdown } from '@/lib/export-markdown';
-import { exportToPDF } from '@/lib/export-pdf';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { Download, Share2, Shield, FileText, Copy } from 'lucide-react';
+import { Download, Share2, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-
-const LANG_OPTIONS: { value: AppLanguage; flag: string; label: string }[] = [
-  { value: 'en', flag: 'рџ‡¬рџ‡§', label: 'EN' },
-  { value: 'ru', flag: 'рџ‡·рџ‡є', label: 'RU' },
-  { value: 'es', flag: 'рџ‡Єрџ‡ё', label: 'ES' },
-];
 
 const Index = () => {
-  const [lang, setLang] = useState<AppLanguage>('en');
   const [activeTab, setActiveTab] = useState<'audit' | 'dossier'>('audit');
   const [result, setResult] = useState<AuditResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [steps, setSteps] = useState<AnalysisStep[]>([]);
   const [showOnboarding, setShowOnboarding] = useState(true);
 
-  // 11 steps spread over ~60s
   const simulateProgress = useCallback(() => {
     const newSteps = ANALYSIS_STEPS.map(s => ({ ...s }));
     setSteps(newSteps);
-    const delays = [800, 3000, 6000, 10000, 14000, 18000, 22000, 28000, 34000, 40000, 48000];
+
+    const delays = [800, 2500, 5000, 8000, 12000, 16000];
     delays.forEach((delay, i) => {
       setTimeout(() => {
         setSteps(prev => prev.map((s, j) => ({
@@ -58,157 +47,111 @@ const Index = () => {
           timeRange: data.timeRange,
           language: data.language,
           depth: data.depth,
-          targetAudience: data.targetAudience,
-          companyStage: data.companyStage,
-          knownCompetitors: data.knownCompetitors,
-          ltv: data.ltv,
-          cac: data.cac,
-          retentionRate: data.retentionRate,
-          additionalContext: data.additionalContext,
         },
       });
 
       if (error) throw error;
 
+      // Mark all steps done
       setSteps(prev => prev.map(s => ({ ...s, status: 'done' as const })));
       await new Promise(r => setTimeout(r, 600));
+
       setResult(researchData as AuditResponse);
-      toast.success(t(lang, 'audit_done'));
+      toast.success('Аудит завершён');
     } catch (err) {
       console.error('Research failed:', err);
       setSteps(prev => prev.map((s, i) => ({ ...s, status: i === prev.length - 1 ? 'error' as const : s.status })));
-      toast.error(t(lang, 'audit_error'));
+      toast.error('Ошибка при проведении аудита. Попробуйте ещё раз.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleCopyMd = async () => {
-    if (!result) return;
-    await copyMarkdownToClipboard(result);
-    toast.success(t(lang, 'copied'));
-  };
-
-  const handleDownloadMd = () => { if (result) downloadMarkdown(result); };
-  const handleDownloadPdf = () => { if (result) exportToPDF(result); };
-
   return (
-    <TooltipProvider>
-      <div className="min-h-screen bg-background">
-        {/* Nav */}
-        <header className="border-b border-border bg-card/50 backdrop-blur-md sticky top-0 z-50">
-          <div className="max-w-6xl mx-auto px-6 flex items-center justify-between h-14">
-            <div className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-primary" />
-              <span className="text-base font-semibold tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
-                {t(lang, 'app_name')}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-1">
-              <nav className="flex gap-1 mr-3">
-                <button
-                  onClick={() => setActiveTab('audit')}
-                  className={`px-4 py-2 text-sm font-mono rounded-md transition-colors ${activeTab === 'audit' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground'}`}
-                >
-                  {t(lang, 'nav_audit')}
-                </button>
-                <button
-                  onClick={() => setActiveTab('dossier')}
-                  className={`px-4 py-2 text-sm font-mono rounded-md transition-colors ${activeTab === 'dossier' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground'}`}
-                >
-                  {t(lang, 'nav_dossier')}
-                </button>
-              </nav>
-
-              {/* Language switcher */}
-              <div className="flex items-center gap-0.5 bg-secondary/50 rounded-lg p-0.5">
-                {LANG_OPTIONS.map(opt => (
-                  <button
-                    key={opt.value}
-                    onClick={() => setLang(opt.value)}
-                    className={`px-2.5 py-1 text-xs font-mono rounded-md transition-all ${
-                      lang === opt.value
-                        ? 'bg-primary text-primary-foreground font-semibold'
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                    title={opt.flag}
-                  >
-                    {opt.flag} {opt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+    <div className="min-h-screen bg-background">
+      {/* Nav */}
+      <header className="border-b border-border bg-card/50 backdrop-blur-md sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-6 flex items-center justify-between h-14">
+          <div className="flex items-center gap-2">
+            <Shield className="h-5 w-5 text-primary" />
+            <span className="text-base font-semibold tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>RepAudit</span>
           </div>
-        </header>
+          <nav className="flex gap-1">
+            <button
+              onClick={() => setActiveTab('audit')}
+              className={`px-4 py-2 text-sm font-mono rounded-md transition-colors ${activeTab === 'audit' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Репутационный аудит
+            </button>
+            <button
+              onClick={() => setActiveTab('dossier')}
+              className={`px-4 py-2 text-sm font-mono rounded-md transition-colors ${activeTab === 'dossier' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Досье компании
+            </button>
+          </nav>
+        </div>
+      </header>
 
-        {activeTab === 'audit' ? (
-          <main className="max-w-6xl mx-auto px-6 py-8">
-            {/* Onboarding */}
-            {showOnboarding && !result && !isLoading && (
-              <div className="text-center mb-8 py-12">
-                <h1 className="text-3xl md:text-4xl font-bold mb-3" style={{ fontFamily: "'Playfair Display', serif" }}>
-                  {t(lang, 'onboarding_title')}
-                </h1>
-                <p className="text-muted-foreground max-w-lg mx-auto text-sm">{t(lang, 'onboarding_sub')}</p>
-              </div>
-            )}
-
-            {/* Form */}
-            <div className="bg-card border border-border rounded-xl p-6 mb-8">
-              <AuditForm onSubmit={handleSubmit} isLoading={isLoading} lang={lang} />
+      {activeTab === 'audit' ? (
+        <main className="max-w-6xl mx-auto px-6 py-8">
+          {/* Onboarding hint */}
+          {showOnboarding && !result && !isLoading && (
+            <div className="text-center mb-8 py-12">
+              <h1 className="text-3xl md:text-4xl font-bold mb-3" style={{ fontFamily: "'Playfair Display', serif" }}>
+                Репутационный аудит
+              </h1>
+              <p className="text-muted-foreground max-w-lg mx-auto text-sm">
+                Введите название компании, и мы проведём полный репутационный аудит за 60 секунд
+              </p>
             </div>
+          )}
 
-            {/* Progress */}
-            {isLoading && (
-              <div className="mb-8">
-                <AnalysisProgress steps={steps} lang={lang} />
-              </div>
-            )}
+          {/* Form */}
+          <div className="bg-card border border-border rounded-xl p-6 mb-8">
+            <AuditForm onSubmit={handleSubmit} isLoading={isLoading} />
+          </div>
 
-            {/* Results */}
-            {result && !isLoading && (
-              <>
-                <div className="flex flex-wrap justify-end gap-2 mb-4">
-                  <Button variant="outline" size="sm" className="gap-2 font-mono text-xs" onClick={handleCopyMd}>
-                    <Copy className="h-3.5 w-3.5" /> {t(lang, 'btn_copy_md')}
-                  </Button>
-                  <Button variant="outline" size="sm" className="gap-2 font-mono text-xs" onClick={handleDownloadMd}>
-                    <FileText className="h-3.5 w-3.5" /> {t(lang, 'btn_download_md')}
-                  </Button>
-                  <Button variant="outline" size="sm" className="gap-2 font-mono text-xs" onClick={handleDownloadPdf}>
-                    <Download className="h-3.5 w-3.5" /> {t(lang, 'btn_download_pdf')}
-                  </Button>
-                  <Button variant="outline" size="sm" className="gap-2 font-mono text-xs" disabled>
-                    <Share2 className="h-3.5 w-3.5" /> {t(lang, 'btn_share')}
-                  </Button>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="outline" size="sm" className="gap-2 font-mono text-xs opacity-50 cursor-not-allowed" disabled>
-                        {t(lang, 'btn_gamma')}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Coming soon</TooltipContent>
-                  </Tooltip>
-                </div>
-                <AuditReport data={result} lang={lang} />
-              </>
-            )}
-          </main>
-        ) : (
-          <main className="max-w-3xl mx-auto px-6 py-24 text-center">
-            <div className="bg-card border border-border rounded-xl p-12">
-              <h2 className="text-2xl font-bold mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
-                {t(lang, 'dossier_title')}
-              </h2>
-              <p className="text-sm text-muted-foreground mb-2 font-mono uppercase tracking-wider">{t(lang, 'dossier_coming')}</p>
-              <p className="text-muted-foreground max-w-md mx-auto mb-8 text-sm leading-relaxed">{t(lang, 'dossier_desc')}</p>
-              <Button variant="outline" className="font-mono text-xs" disabled>{t(lang, 'dossier_notify')}</Button>
+          {/* Progress */}
+          {isLoading && (
+            <div className="mb-8">
+              <AnalysisProgress steps={steps} />
             </div>
-          </main>
-        )}
-      </div>
-    </TooltipProvider>
+          )}
+
+          {/* Results */}
+          {result && !isLoading && (
+            <>
+              <div className="flex justify-end gap-2 mb-4">
+                <Button variant="outline" size="sm" className="gap-2 font-mono text-xs">
+                  <Download className="h-3.5 w-3.5" /> Скачать PDF
+                </Button>
+                <Button variant="outline" size="sm" className="gap-2 font-mono text-xs">
+                  <Share2 className="h-3.5 w-3.5" /> Поделиться
+                </Button>
+              </div>
+              <AuditReport data={result} />
+            </>
+          )}
+        </main>
+      ) : (
+        /* Dossier Coming Soon */
+        <main className="max-w-3xl mx-auto px-6 py-24 text-center">
+          <div className="bg-card border border-border rounded-xl p-12">
+            <h2 className="text-2xl font-bold mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
+              Досье компании
+            </h2>
+            <p className="text-sm text-muted-foreground mb-2 font-mono uppercase tracking-wider">Coming Soon</p>
+            <p className="text-muted-foreground max-w-md mx-auto mb-8 text-sm leading-relaxed">
+              Полное досье: структура собственности, финансовые показатели, ключевые персоны, история, партнёры и контрагенты.
+            </p>
+            <Button variant="outline" className="font-mono text-xs" disabled>
+              Уведомить меня
+            </Button>
+          </div>
+        </main>
+      )}
+    </div>
   );
 };
 
