@@ -225,6 +225,54 @@ export const translations = {
     traj_assumptions: 'Key Assumptions',
 
     // Dossier
+    // Risk Index
+    section_risk_index: '🚨 Reputation Risk Index',
+    risk_score: 'Risk Score',
+    risk_level_low: 'Low',
+    risk_level_moderate: 'Moderate',
+    risk_level_high: 'High',
+    crisis_probability: 'Crisis Probability',
+    risk_formula: 'Risk Formula',
+    risk_neg_sentiment: 'Neg. Sentiment Weight',
+    risk_serp_neg: 'SERP Negative Presence',
+    risk_volatility: 'Volatility Spike',
+
+    // SERP Control
+    section_serp: '🔎 SERP Control',
+    serp_owned: 'Owned',
+    serp_neutral: 'Neutral',
+    serp_negative: 'Negative',
+    serp_competitor: 'Competitor',
+    serp_top10: 'Top 10 Google Results',
+    serp_formula: 'SERP Control Formula',
+
+    // Financial Impact
+    section_financial: '💰 Financial Impact',
+    financial_lost_revenue: 'Estimated Lost Revenue',
+    financial_sentiment_gap: 'Sentiment Gap',
+    financial_formula: 'Formula Inputs',
+    financial_traffic: 'Est. Monthly Traffic',
+    financial_conversion: 'Conversion Rate',
+    financial_deal_size: 'Avg Deal Size',
+    financial_impact_pct: 'Sentiment Impact',
+
+    // Anomaly Alerts
+    section_anomaly: '⚠️ Anomaly Alerts',
+
+    // Score Breakdown
+    section_score_breakdown: '📐 Score Breakdown',
+    score_review_sentiment: 'Review Sentiment',
+    score_review_volume: 'Review Volume',
+    score_serp_control: 'SERP Control',
+    score_media_sentiment: 'Media Sentiment',
+    score_share_voice: 'Share of Voice',
+    score_low_volatility: 'Low Volatility',
+    score_formula: 'Reputation Score Formula',
+
+    // Data Sources
+    section_data_sources: '🔗 Data Sources Used',
+    sources_analyzed: 'sources analyzed',
+
     dossier_title: 'Company Dossier',
     dossier_coming: 'Coming Soon',
     dossier_desc: 'Full dossier: ownership structure, financials, key people, history, partners and contractors.',
@@ -433,6 +481,48 @@ export const translations = {
     traj_optimised: 'При оптимизации',
     traj_assumptions: 'Ключевые допущения',
 
+    section_risk_index: '🚨 Индекс репутационного риска',
+    risk_score: 'Оценка риска',
+    risk_level_low: 'Низкий',
+    risk_level_moderate: 'Умеренный',
+    risk_level_high: 'Высокий',
+    crisis_probability: 'Вероятность кризиса',
+    risk_formula: 'Формула риска',
+    risk_neg_sentiment: 'Вес негатива',
+    risk_serp_neg: 'Негатив в SERP',
+    risk_volatility: 'Всплеск волатильности',
+
+    section_serp: '🔎 Контроль SERP',
+    serp_owned: 'Собственные',
+    serp_neutral: 'Нейтральные',
+    serp_negative: 'Негативные',
+    serp_competitor: 'Конкуренты',
+    serp_top10: 'Топ-10 результатов Google',
+    serp_formula: 'Формула SERP Control',
+
+    section_financial: '💰 Финансовое влияние',
+    financial_lost_revenue: 'Оценка упущенной выручки',
+    financial_sentiment_gap: 'Разрыв тональности',
+    financial_formula: 'Входные данные формулы',
+    financial_traffic: 'Оценочный трафик',
+    financial_conversion: 'Конверсия',
+    financial_deal_size: 'Средний чек',
+    financial_impact_pct: 'Влияние тональности',
+
+    section_anomaly: '⚠️ Аномалии',
+
+    section_score_breakdown: '📐 Разбор оценки',
+    score_review_sentiment: 'Тональность отзывов',
+    score_review_volume: 'Объём отзывов',
+    score_serp_control: 'Контроль SERP',
+    score_media_sentiment: 'Тональность СМИ',
+    score_share_voice: 'Доля голоса',
+    score_low_volatility: 'Низкая волатильность',
+    score_formula: 'Формула Reputation Score',
+
+    section_data_sources: '🔗 Использованные источники',
+    sources_analyzed: 'источников проанализировано',
+
     dossier_title: 'Досье компании',
     dossier_coming: 'Coming Soon',
     dossier_desc: 'Полное досье: структура собственности, финансовые показатели, ключевые персоны, история, партнёры и контрагенты.',
@@ -640,6 +730,48 @@ export const translations = {
     traj_unmanaged: 'Sin cambios',
     traj_optimised: 'Optimizado',
     traj_assumptions: 'Supuestos clave',
+
+    section_risk_index: '🚨 Índice de Riesgo Reputacional',
+    risk_score: 'Puntuación de riesgo',
+    risk_level_low: 'Bajo',
+    risk_level_moderate: 'Moderado',
+    risk_level_high: 'Alto',
+    crisis_probability: 'Probabilidad de crisis',
+    risk_formula: 'Fórmula de riesgo',
+    risk_neg_sentiment: 'Peso del sentimiento neg.',
+    risk_serp_neg: 'Presencia neg. en SERP',
+    risk_volatility: 'Pico de volatilidad',
+
+    section_serp: '🔎 Control SERP',
+    serp_owned: 'Propios',
+    serp_neutral: 'Neutrales',
+    serp_negative: 'Negativos',
+    serp_competitor: 'Competidores',
+    serp_top10: 'Top 10 resultados de Google',
+    serp_formula: 'Fórmula de control SERP',
+
+    section_financial: '💰 Impacto Financiero',
+    financial_lost_revenue: 'Ingresos perdidos estimados',
+    financial_sentiment_gap: 'Brecha de sentimiento',
+    financial_formula: 'Entradas de la fórmula',
+    financial_traffic: 'Tráfico estimado',
+    financial_conversion: 'Tasa de conversión',
+    financial_deal_size: 'Tamaño promedio de venta',
+    financial_impact_pct: 'Impacto del sentimiento',
+
+    section_anomaly: '⚠️ Alertas de Anomalías',
+
+    section_score_breakdown: '📐 Desglose de Puntuación',
+    score_review_sentiment: 'Sentimiento de reseñas',
+    score_review_volume: 'Volumen de reseñas',
+    score_serp_control: 'Control SERP',
+    score_media_sentiment: 'Sentimiento en medios',
+    score_share_voice: 'Cuota de voz',
+    score_low_volatility: 'Baja volatilidad',
+    score_formula: 'Fórmula de Reputation Score',
+
+    section_data_sources: '🔗 Fuentes de Datos Utilizadas',
+    sources_analyzed: 'fuentes analizadas',
 
     dossier_title: 'Expediente de Empresa',
     dossier_coming: 'Próximamente',
