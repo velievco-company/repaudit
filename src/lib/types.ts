@@ -28,6 +28,7 @@ export interface SentimentPoint {
 export interface FlagItem {
   text: string;
   severity?: 'critical' | 'warning' | 'info';
+  source_url?: string;
 }
 
 export interface Recommendation {
@@ -48,7 +49,71 @@ export interface CompetitorData {
   sentiment_score: number;
 }
 
-// ── New v2 interfaces ──────────────────────────────────────────────────
+// ── Score Breakdown ────────────────────────────────────────────────────
+
+export interface ScoreBreakdown {
+  review_sentiment: number;
+  review_volume: number;
+  serp_control: number;
+  media_sentiment: number;
+  share_of_voice: number;
+  low_volatility: number;
+}
+
+// ── Risk Index ─────────────────────────────────────────────────────────
+
+export interface RiskIndex {
+  score: number;
+  level: 'low' | 'moderate' | 'high';
+  crisis_probability: number;
+  components: {
+    negative_sentiment_weight: number;
+    serp_negative_presence: number;
+    volatility_spike: number;
+  };
+}
+
+// ── SERP Control ───────────────────────────────────────────────────────
+
+export interface SERPResult {
+  title: string;
+  url: string;
+  type: 'owned' | 'neutral' | 'negative' | 'competitor';
+}
+
+export interface SERPControl {
+  score: number;
+  owned: number;
+  neutral: number;
+  negative: number;
+  competitor: number;
+  results: SERPResult[];
+}
+
+// ── Financial Impact ───────────────────────────────────────────────────
+
+export interface FinancialImpact {
+  lost_revenue_estimate: number;
+  sentiment_gap_pct: number;
+  explanation: string;
+  formula_inputs: {
+    estimated_traffic: number;
+    conversion_rate: number;
+    avg_deal_size: number;
+    sentiment_impact_pct: number;
+  };
+}
+
+// ── Anomaly Alerts ─────────────────────────────────────────────────────
+
+export interface AnomalyAlert {
+  type: string;
+  description: string;
+  severity: 'critical' | 'warning' | 'info';
+  detected_at?: string;
+}
+
+// ── Existing v2 interfaces ─────────────────────────────────────────────
 
 export interface NegativeExposureItem {
   source: string;
@@ -57,6 +122,7 @@ export interface NegativeExposureItem {
   visibility: string;
   action: string;
   summary: string;
+  url?: string;
 }
 
 export interface NegativeExposure {
@@ -148,6 +214,10 @@ export interface AuditResponse {
   overall_score: number;
   verdict: string;
   data_date: string;
+  data_sources_used?: string[];
+  score_breakdown?: ScoreBreakdown;
+  risk_index?: RiskIndex;
+  serp_control?: SERPControl;
   summary: {
     main_activity: string;
     key_narratives: string[];
@@ -179,7 +249,7 @@ export interface AuditResponse {
   };
   red_flags: FlagItem[];
   green_flags: FlagItem[];
-  esg: {
+  esg?: {
     ecology: string;
     labor: string;
     data_privacy: string;
@@ -192,6 +262,10 @@ export interface AuditResponse {
     long_term: string[];
   };
   confidence: ConfidenceLevel;
+
+  // Financial & risk modules
+  financial_impact?: FinancialImpact;
+  anomaly_alerts?: AnomalyAlert[];
 
   // v2 optional sections
   negative_exposure?: NegativeExposure;
