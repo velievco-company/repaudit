@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import AuditForm from '@/components/AuditForm';
 import AuditReport from '@/components/AuditReport';
 import AnalysisProgress from '@/components/AnalysisProgress';
@@ -9,9 +9,10 @@ import { copyMarkdownToClipboard, downloadMarkdown } from '@/lib/export-markdown
 import { exportToPDF } from '@/lib/export-pdf';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { Download, Share2, Shield, FileText, Copy } from 'lucide-react';
+import { Download, Share2, Shield, FileText, Copy, LogOut, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Session } from '@supabase/supabase-js';
 
 const LANG_OPTIONS: { value: AppLanguage; flag: string; label: string }[] = [
   { value: 'en', flag: '🇬🇧', label: 'EN' },
@@ -26,6 +27,18 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [steps, setSteps] = useState<AnalysisStep[]>([]);
   const [showOnboarding, setShowOnboarding] = useState(true);
+  const [session, setSession] = useState<Session | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    toast.success('Signed out');
+  };
 
   const simulateProgress = useCallback(() => {
     const newSteps = ANALYSIS_STEPS.map(s => ({ ...s }));
@@ -50,19 +63,19 @@ const Index = () => {
     try {
       const { data: researchData, error } = await supabase.functions.invoke('reputation-research', {
         body: {
-          companyName: data.companyName,
-          website: data.website,
-          country: data.country,
-          industry: data.industry,
-          timeRange: data.timeRange,
-          language: data.language,
-          depth: data.depth,
-          targetAudience: data.targetAudience,
-          companyStage: data.companyStage,
+          companyName:      data.companyName,
+          website:          data.website,
+          country:          data.country,
+          industry:         data.industry,
+          timeRange:        data.timeRange,
+          language:         data.language,
+          depth:            data.depth,
+          targetAudience:   data.targetAudience,
+          companyStage:     data.companyStage,
           knownCompetitors: data.knownCompetitors,
-          ltv: data.ltv,
-          cac: data.cac,
-          retentionRate: data.retentionRate,
+          ltv:              data.ltv,
+          cac:              data.cac,
+          retentionRate:    data.retentionRate,
           additionalContext: data.additionalContext,
         },
       });
@@ -75,7 +88,10 @@ const Index = () => {
       toast.success(t(lang, 'audit_done'));
     } catch (err) {
       console.error('Research failed:', err);
-      setSteps(prev => prev.map((s, i) => ({ ...s, status: i === prev.length - 1 ? 'error' as const : s.status })));
+      setSteps(prev => prev.map((s, i) => ({
+        ...s,
+        status: i === prev.length - 1 ? 'error' as const : s.status,
+      })));
       toast.error(t(lang, 'audit_error'));
     } finally {
       setIsLoading(false);
@@ -87,15 +103,18 @@ const Index = () => {
     await copyMarkdownToClipboard(result);
     toast.success(t(lang, 'copied'));
   };
-
-  const handleDownloadMd = () => { if (result) downloadMarkdown(result); };
+  const handleDownloadMd  = () => { if (result) downloadMarkdown(result); };
   const handleDownloadPdf = () => { if (result) exportToPDF(result); };
 
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-background">
+
+        {/* Nav */}
         <header className="border-b border-border bg-card/50 backdrop-blur-md sticky top-0 z-50">
           <div className="max-w-6xl mx-auto px-6 flex items-center justify-between h-14">
+
+            {/* Logo */}
             <div className="flex items-center gap-2">
               <Shield className="h-5 w-5 text-primary" />
               <span className="text-base font-semibold tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
@@ -103,8 +122,9 @@ const Index = () => {
               </span>
             </div>
 
-            <div className="flex items-center gap-1">
-              <nav className="flex gap-1 mr-3">
+            <div className="flex items-center gap-2">
+              {/* Tabs */}
+              <nav className="flex gap-1 mr-1">
                 <button
                   onClick={() => setActiveTab('audit')}
                   className={`px-4 py-2 text-sm font-mono rounded-md transition-colors ${activeTab === 'audit' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground'}`}
@@ -119,6 +139,7 @@ const Index = () => {
                 </button>
               </nav>
 
+              {/* Language switcher */}
               <div className="flex items-center gap-0.5 bg-secondary/50 rounded-lg p-0.5">
                 {LANG_OPTIONS.map(opt => (
                   <button
@@ -129,24 +150,55 @@ const Index = () => {
                         ? 'bg-primary text-primary-foreground font-semibold'
                         : 'text-muted-foreground hover:text-foreground'
                     }`}
-                    title={opt.flag}
                   >
                     {opt.flag} {opt.label}
                   </button>
                 ))}
               </div>
+
+              {/* User info + sign out */}
+              {session && (
+                <div className="flex items-center gap-2 ml-1 pl-2 border-l border-border">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-mono cursor-default">
+                        <User className="h-3.5 w-3.5" />
+                        <span className="max-w-[120px] truncate hidden sm:block">
+                          {session.user.email}
+                        </span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>{session.user.email}</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={handleSignOut}
+                        className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded"
+                      >
+                        <LogOut className="h-3.5 w-3.5" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>Sign out</TooltipContent>
+                  </Tooltip>
+                </div>
+              )}
             </div>
           </div>
         </header>
 
+        {/* Main content */}
         {activeTab === 'audit' ? (
           <main className="max-w-6xl mx-auto px-6 py-8">
+
             {showOnboarding && !result && !isLoading && (
               <div className="text-center mb-8 py-12">
                 <h1 className="text-3xl md:text-4xl font-bold mb-3" style={{ fontFamily: "'Playfair Display', serif" }}>
                   {t(lang, 'onboarding_title')}
                 </h1>
-                <p className="text-muted-foreground max-w-lg mx-auto text-sm">{t(lang, 'onboarding_sub')}</p>
+                <p className="text-muted-foreground max-w-lg mx-auto text-sm">
+                  {t(lang, 'onboarding_sub')}
+                </p>
               </div>
             )}
 
@@ -194,9 +246,15 @@ const Index = () => {
               <h2 className="text-2xl font-bold mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
                 {t(lang, 'dossier_title')}
               </h2>
-              <p className="text-sm text-muted-foreground mb-2 font-mono uppercase tracking-wider">{t(lang, 'dossier_coming')}</p>
-              <p className="text-muted-foreground max-w-md mx-auto mb-8 text-sm leading-relaxed">{t(lang, 'dossier_desc')}</p>
-              <Button variant="outline" className="font-mono text-xs" disabled>{t(lang, 'dossier_notify')}</Button>
+              <p className="text-sm text-muted-foreground mb-2 font-mono uppercase tracking-wider">
+                {t(lang, 'dossier_coming')}
+              </p>
+              <p className="text-muted-foreground max-w-md mx-auto mb-8 text-sm leading-relaxed">
+                {t(lang, 'dossier_desc')}
+              </p>
+              <Button variant="outline" className="font-mono text-xs" disabled>
+                {t(lang, 'dossier_notify')}
+              </Button>
             </div>
           </main>
         )}
