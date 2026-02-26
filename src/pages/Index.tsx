@@ -84,8 +84,22 @@ const Index = () => {
 
       setSteps(prev => prev.map(s => ({ ...s, status: 'done' as const })));
       await new Promise(r => setTimeout(r, 600));
-      setResult(researchData as AuditResponse);
+      const auditResult = researchData as AuditResponse;
+      setResult(auditResult);
       toast.success(t(lang, 'audit_done'));
+
+      // Save audit to database
+      if (session?.user?.id) {
+        const { error: saveErr } = await supabase.from('audits').insert({
+          user_id: session.user.id,
+          company_name: data.companyName,
+          country: data.country || null,
+          industry: data.industry || null,
+          result: auditResult as any,
+          score: auditResult.overall_score ?? null,
+        });
+        if (saveErr) console.error('Failed to save audit:', saveErr);
+      }
     } catch (err) {
       console.error('Research failed:', err);
       setSteps(prev => prev.map((s, i) => ({
