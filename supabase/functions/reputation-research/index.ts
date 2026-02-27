@@ -507,52 +507,42 @@ serve(async (req) => {
   const TAVILY_API_KEY  = Deno.env.get("TAVILY_API_KEY");
   if (!LOVABLE_API_KEY) return Errors.internal();
 
-  // 6. STREAMING RESPONSE
-  const { readable, writable } = new TransformStream();
-  const writer  = writable.getWriter();
-  const encoder = new TextEncoder();
+  // 6. PROCESS & RESPOND
+  try {
+    // Web search
+    let realWorldData = "No web search API. Using model knowledge.";
+    if (TAVILY_API_KEY) {
+      realWorldData = await gatherRealData(companyName, website, country, industry, TAVILY_API_KEY);
+    }
 
-  const write = async (data: string) => {
-    try { await writer.write(encoder.encode(data)); } catch { /* closed */ }
-  };
+    const langInstruction =
+      language === "ru" ? "Respond entirely in Russian." :
+      language === "en" ? "Respond entirely in English." :
+      language === "es" ? "Respond entirely in Spanish." :
+      "Respond in the primary language of the company's market.";
 
-  (async () => {
-    try {
-      // Web search
-      let realWorldData = "No web search API. Using model knowledge.";
-      if (TAVILY_API_KEY) {
-        realWorldData = await gatherRealData(companyName, website, country, industry, TAVILY_API_KEY);
-      }
+    const depthInstruction =
+      depth === "deep"  ? "Extremely thorough. Maximum detail." :
+      depth === "basic" ? "Concise overview." :
+      "Balanced analysis with key details.";
 
-      // Prompt
-      const langInstruction =
-        language === "ru" ? "Respond entirely in Russian." :
-        language === "en" ? "Respond entirely in English." :
-        language === "es" ? "Respond entirely in Spanish." :
-        "Respond in the primary language of the company's market.";
+    const extendedContext = [
+      targetAudience   ? `Target Audience: ${targetAudience}`   : "",
+      companyStage     ? `Company Stage: ${companyStage}`       : "",
+      knownCompetitors ? `Competitors: ${knownCompetitors}`     : "",
+      ltv              ? `LTV: $${ltv}`                         : "",
+      cac              ? `CAC: $${cac}`                         : "",
+      retentionRate    ? `Retention: ${retentionRate}%`         : "",
+      additionalContext ? `Context: ${additionalContext}`       : "",
+    ].filter(Boolean).join("\n");
 
-      const depthInstruction =
-        depth === "deep"  ? "Extremely thorough. Maximum detail." :
-        depth === "basic" ? "Concise overview." :
-        "Balanced analysis with key details.";
-
-      const extendedContext = [
-        targetAudience   ? `Target Audience: ${targetAudience}`   : "",
-        companyStage     ? `Company Stage: ${companyStage}`       : "",
-        knownCompetitors ? `Competitors: ${knownCompetitors}`     : "",
-        ltv              ? `LTV: $${ltv}`                         : "",
-        cac              ? `CAC: $${cac}`                         : "",
-        retentionRate    ? `Retention: ${retentionRate}%`         : "",
-        additionalContext ? `Context: ${additionalContext}`       : "",
-      ].filter(Boolean).join("\n");
-
-      const systemPrompt = `You are an elite reputation intelligence analyst.
+    const systemPrompt = `You are an elite reputation intelligence analyst.
 ${langInstruction} ${depthInstruction}
 CRITICAL: Base analysis ONLY on real web data provided. Do NOT invent facts.
 If something is not in the data, state "not found in available sources".
 You MUST use the deliver_audit tool with complete JSON.`;
 
-      const userMessage = `Audit: ${companyName}
+    const userMessage = `Audit: ${companyName}
 ${website ? `Website: ${website}` : ""}${country ? ` | Country: ${country}` : ""}${industry ? ` | Industry: ${industry}` : ""}
 Period: last ${timeRange} months
 ${extendedContext ? `Context:\n${extendedContext}\n` : ""}
@@ -560,53 +550,40 @@ ${extendedContext ? `Context:\n${extendedContext}\n` : ""}
 ${realWorldData}
 === END ===`;
 
-      // AI call
-      const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "openai/gpt-5",
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user",   content: userMessage  },
-          ],
-          tools: [{ type: "function", function: { name: "deliver_audit", description: "Deliver complete reputation audit", parameters: auditSchema } }],
-          tool_choice: { type: "function", function: { name: "deliver_audit" } },
-        }),
-      });
+    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "openai/gpt-5",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user",   content: userMessage  },
+        ],
+        tools: [{ type: "function", function: { name: "deliver_audit", description: "Deliver complete reputation audit", parameters: auditSchema } }],
+        tool_choice: { type: "function", function: { name: "deliver_audit" } },
+      }),
+    });
 
-      if (!aiResponse.ok) {
-        await write(JSON.stringify({ error: aiResponse.status === 429 ? "Rate limit exceeded" : "Analysis failed" }));
-        await writer.close();
-        return;
-      }
-
-      const data    = await aiResponse.json();
-      const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-      if (!toolCall) {
-        await write(JSON.stringify({ error: "No results returned" }));
-        await writer.close();
-        return;
-      }
-
-      const result = JSON.parse(toolCall.function.arguments);
-
-      // Save to DB (non-blocking)
-      saveAudit(userId, companyName, country, industry, result);
-
-      await write(JSON.stringify(result));
-      await writer.close();
-
-    } catch {
-      // Never expose internal error details
-      try {
-        await write(JSON.stringify({ error: "Analysis failed. Please try again." }));
-        await writer.close();
-      } catch { /* connection already closed */ }
+    if (!aiResponse.ok) {
+      return respond({ error: aiResponse.status === 429 ? "Rate limit exceeded" : "Analysis failed" }, aiResponse.status >= 500 ? 500 : 400);
     }
-  })();
 
-  return new Response(readable, {
-    headers: { ...corsHeaders, "Content-Type": "application/json", "X-Content-Type-Options": "nosniff" },
-  });
+    const data = await aiResponse.json();
+    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+    if (!toolCall) return Errors.internal();
+
+    const result = JSON.parse(toolCall.function.arguments);
+
+    // Save to DB non-blocking
+    saveAudit(userId, companyName, country, industry, result);
+
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+
+  } catch (err) {
+    console.error("Function error:", err instanceof Error ? err.message : "unknown");
+    return Errors.internal();
+  }
 });
