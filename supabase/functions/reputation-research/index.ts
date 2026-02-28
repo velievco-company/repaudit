@@ -503,9 +503,9 @@ serve(async (req) => {
   const retentionRate     = body.retentionRate ?? null;
   const additionalContext = sanitize(body.additionalContext);
 
-  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
   const TAVILY_API_KEY  = Deno.env.get("TAVILY_API_KEY");
-  if (!LOVABLE_API_KEY) return Errors.internal();
+  if (!GEMINI_API_KEY) return Errors.internal();
 
   // 6. PROCESS & RESPOND
   try {
@@ -550,29 +550,44 @@ ${extendedContext ? `Context:\n${extendedContext}\n` : ""}
 ${realWorldData}
 === END ===`;
 
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "openai/gpt-5",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user",   content: userMessage  },
-        ],
-        tools: [{ type: "function", function: { name: "deliver_audit", description: "Deliver complete reputation audit", parameters: auditSchema } }],
-        tool_choice: { type: "function", function: { name: "deliver_audit" } },
-      }),
-    });
+    const geminiMessages = [
+      { role: "user", parts: [{ text: systemPrompt + "\n\n" + userMessage + "\n\nRespond ONLY with a valid JSON object matching the deliver_audit schema. No markdown, no explanation, just JSON." }] }
+    ];
+
+    const aiResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: geminiMessages,
+          generationConfig: {
+            temperature: 0.3,
+            maxOutputTokens: 8192,
+            responseMimeType: "application/json",
+          },
+        }),
+      }
+    );
 
     if (!aiResponse.ok) {
       return respond({ error: aiResponse.status === 429 ? "Rate limit exceeded" : "Analysis failed" }, aiResponse.status >= 500 ? 500 : 400);
     }
 
     const data = await aiResponse.json();
-    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall) return Errors.internal();
-
-    const result = JSON.parse(toolCall.function.arguments);
+    const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!rawText) {
+      console.error("Gemini empty response:", JSON.stringify(data));
+      return Errors.internal();
+    }
+    let result: any;
+    try {
+      const clean = rawText.replace(/```json|```/g, "").trim();
+      result = JSON.parse(clean);
+    } catch (e) {
+      console.error("JSON parse error:", e);
+      return Errors.internal();
+    }
 
     // Save to DB non-blocking
     saveAudit(userId, companyName, country, industry, result);
