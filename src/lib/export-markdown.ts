@@ -89,6 +89,16 @@ export function generateMarkdown(data: AuditResponse): string {
       : '— None found',
     sep,
 
+    `## 🌍 ESG & Ethical Risks`,
+    `**Overall:** ${data.esg.overall}`,
+    ``,
+    data.esg.summary,
+    ``,
+    `| Category | Assessment |`,
+    `|---|---|`,
+    `| Ecology | ${data.esg.ecology} |`,
+    `| Labour Conditions | ${data.esg.labor} |`,
+    `| Data Privacy | ${data.esg.data_privacy} |`,
     sep,
 
     `## 📋 Recommendations`,

@@ -1,4 +1,1 @@
 project_id = "secpxrkihcbjuvfztmjq"
-
-[functions.reputation-research]
-verify_jwt = false

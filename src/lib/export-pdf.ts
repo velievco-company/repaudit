@@ -246,7 +246,15 @@ export async function exportToPDF(data: AuditResponse): Promise<void> {
   if (data.red_flags.length) { h3('Red Flags'); data.red_flags.forEach(f => bullet(`[${f.severity ?? 'info'}] ${f.text}`)); }
   if (data.green_flags.length) { h3('Green Flags'); data.green_flags.forEach(f => bullet(f.text)); }
 
-  // (ESG removed)
+  // ── ESG ───────────────────────────────────────────────────────────────────
+  divider();
+  h2('🌍 ESG & Ethical Risks');
+  body(`Overall: ${data.esg.overall}  |  ${data.esg.summary}`);
+  simpleTable(
+    ['Category', 'Assessment'],
+    [['Ecology', data.esg.ecology], ['Labour', data.esg.labor], ['Data Privacy', data.esg.data_privacy]],
+    [40, 130]
+  );
 
   // ── RECOMMENDATIONS ───────────────────────────────────────────────────────
   newPage();
