@@ -14,13 +14,90 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      audits: {
+        Row: {
+          company_name: string
+          country: string | null
+          created_at: string | null
+          id: string
+          industry: string | null
+          result: Json
+          score: number | null
+          user_id: string
+        }
+        Insert: {
+          company_name: string
+          country?: string | null
+          created_at?: string | null
+          id?: string
+          industry?: string | null
+          result: Json
+          score?: number | null
+          user_id: string
+        }
+        Update: {
+          company_name?: string
+          country?: string | null
+          created_at?: string | null
+          id?: string
+          industry?: string | null
+          result?: Json
+          score?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      usage_limits: {
+        Row: {
+          audits_today: number | null
+          audits_total: number | null
+          last_reset: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          audits_today?: number | null
+          audits_total?: number | null
+          last_reset?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          audits_today?: number | null
+          audits_total?: number | null
+          last_reset?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      reset_daily_limits: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

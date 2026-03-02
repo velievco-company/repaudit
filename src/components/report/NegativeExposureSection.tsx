@@ -22,7 +22,7 @@ export default function NegativeExposureSection({ data, lang }: Props) {
           <tbody>
             {data.items.map((item, i) => (
               <tr key={i} className="border-b border-border/30">
-                <td className="py-2">{item.url ? <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{item.source}</a> : item.source}</td>
+                <td className="py-2">{item.source}</td>
                 <td className="py-2">{item.type}</td>
                 <td className="py-2"><span className={item.severity === 'critical' ? 'text-destructive' : item.severity === 'warning' ? 'text-warning' : 'text-muted-foreground'}>{item.severity}</span></td>
                 <td className="py-2">{item.visibility}</td>
