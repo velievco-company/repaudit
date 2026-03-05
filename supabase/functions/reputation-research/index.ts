@@ -27,11 +27,11 @@ function sanitize(str: string | undefined): string {
   return str.replace(/[<>{}]/g, "").trim().slice(0, 500);
 }
 
-// ── TAVILY SEARCH (optional) ──────────────────────────────────────────────────
-async function tavilySearch(query: string, apiKey: string, maxResults = 5): Promise<string> {
+// ── TAVILY SEARCH ──────────────────────────────────────────────────
+async function tavilySearch(query: string, apiKey: string, maxResults = 8): Promise<string> {
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
+    const timeout = setTimeout(() => controller.abort(), 15000);
     const response = await fetch("https://api.tavily.com/search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -39,7 +39,7 @@ async function tavilySearch(query: string, apiKey: string, maxResults = 5): Prom
       body: JSON.stringify({
         api_key: apiKey,
         query,
-        search_depth: "basic",
+        search_depth: "advanced",
         max_results: maxResults,
         include_answer: true,
         include_raw_content: false,
@@ -55,7 +55,7 @@ async function tavilySearch(query: string, apiKey: string, maxResults = 5): Prom
     const lines: string[] = [];
     if (data.answer) lines.push(`SUMMARY: ${data.answer}`, "");
     (data.results ?? []).forEach((r: any, i: number) => {
-      lines.push(`[${i + 1}] ${r.title}`, `URL: ${r.url}`, `Content: ${r.content?.slice(0, 300) ?? ""}`, "");
+      lines.push(`[${i + 1}] ${r.title}`, `URL: ${r.url}`, `Content: ${r.content?.slice(0, 400) ?? ""}`, "");
     });
     return lines.join("\n");
   } catch (e) {
@@ -66,48 +66,56 @@ async function tavilySearch(query: string, apiKey: string, maxResults = 5): Prom
 
 async function gatherRealData(company: string, website: string, country: string, industry: string, apiKey: string): Promise<string> {
   const ctx = [country, industry].filter(Boolean).join(", ");
-  const [news, reviews, legal, social] = await Promise.all([
-    tavilySearch(`"${company}" ${ctx} news reputation 2024 2025`, apiKey, 6),
-    tavilySearch(`"${company}" reviews rating customers complaints`, apiKey, 5),
-    tavilySearch(`"${company}" lawsuit fine regulatory complaint`, apiKey, 4),
-    tavilySearch(`"${company}" reddit twitter social media`, apiKey, 4),
+  const [news, reviews, legal, social, leadership] = await Promise.all([
+    tavilySearch(`"${company}" ${ctx} news reputation 2024 2025`, apiKey, 8),
+    tavilySearch(`"${company}" reviews rating customers complaints`, apiKey, 8),
+    tavilySearch(`"${company}" lawsuit fine regulatory complaint`, apiKey, 5),
+    tavilySearch(`"${company}" reddit twitter social media`, apiKey, 5),
+    tavilySearch(`"${company}" CEO founder leadership reputation`, apiKey, 5),
   ]);
   const sections = [
     news ? `=== NEWS & REPUTATION ===\n${news}` : "",
     reviews ? `=== REVIEWS ===\n${reviews}` : "",
     legal ? `=== LEGAL ===\n${legal}` : "",
     social ? `=== SOCIAL MEDIA ===\n${social}` : "",
+    leadership ? `=== LEADERSHIP ===\n${leadership}` : "",
   ].filter(Boolean);
   return sections.length === 0
     ? "No web search results available. Use your general knowledge."
     : `REAL WEB DATA FOR "${company}":\n\n${sections.join("\n\n")}`;
 }
 
-// ── SAVE AUDIT TO DB ──────────────────────────────────────────────────────────
-async function saveAudit(userId: string, companyName: string, country: string, industry: string, result: object) {
+// ── SAVE AUDIT TO DB ──────────────────────────────────────────────────
+async function saveAudit(userId: string, companyName: string, country: string, industry: string, result: object): Promise<string | null> {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const supabaseService = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!supabaseUrl || !supabaseService) return;
+  if (!supabaseUrl || !supabaseService) return null;
   try {
     const admin = createClient(supabaseUrl, supabaseService);
-    await admin.from("audits").insert({
+    const { data, error } = await admin.from("audits").insert({
       user_id: userId,
       company_name: companyName,
       country: country || null,
       industry: industry || null,
       result,
       score: (result as any).overall_score ?? null,
-    });
+    }).select('share_id').single();
+    if (error) {
+      console.error("Save audit error:", error);
+      return null;
+    }
+    return data?.share_id ?? null;
   } catch (e) {
     console.error("Save audit failed:", e);
+    return null;
   }
 }
 
-// ── MAIN ──────────────────────────────────────────────────────────────────────
+// ── MAIN ──────────────────────────────────────────────────────────
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  // Auth - extract user ID
+  // Auth
   let userId = "anonymous";
   try {
     const authHeader = req.headers.get("authorization");
@@ -147,11 +155,11 @@ serve(async (req) => {
   const retentionRate = body.retentionRate ?? null;
   const additionalContext = sanitize(body.additionalContext);
 
-  // Check for Lovable AI key
-  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-  if (!LOVABLE_API_KEY) {
-    console.error("LOVABLE_API_KEY is not configured");
-    return respond({ error: "Analysis service not configured" }, 500);
+  // Check for Groq API key
+  const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
+  if (!GROQ_API_KEY) {
+    console.error("GROQ_API_KEY is not configured");
+    return respond({ error: "AI service not configured" }, 500);
   }
 
   try {
@@ -287,34 +295,34 @@ Return a JSON object with EXACTLY these fields:
     "current_rating": number, "unmanaged_6mo": number, "optimised_6mo": number,
     "unmanaged_12mo": number, "optimised_12mo": number, "key_assumptions": ["string"]
   }
-}`;
+}
 
-    console.log("Calling Lovable AI Gateway...");
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+Respond ONLY with a valid JSON object. No markdown, no explanation, just raw JSON.`;
+
+    console.log("Calling Groq API...");
+    const aiResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Authorization": `Bearer ${GROQ_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "llama-3.3-70b-versatile",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userMessage },
         ],
         temperature: 0.3,
-        max_tokens: 16000,
+        max_tokens: 8192,
+        response_format: { type: "json_object" },
       }),
     });
 
     if (!aiResponse.ok) {
       const errText = await aiResponse.text();
-      console.error("AI Gateway error:", aiResponse.status, errText);
+      console.error("Groq API error:", aiResponse.status, errText);
       if (aiResponse.status === 429) {
         return respond({ error: "Rate limit exceeded. Please try again in a moment." }, 429);
-      }
-      if (aiResponse.status === 402) {
-        return respond({ error: "AI credits exhausted. Please add credits." }, 402);
       }
       return respond({ error: "Analysis failed. Please try again." }, 500);
     }
@@ -322,20 +330,18 @@ Return a JSON object with EXACTLY these fields:
     const data = await aiResponse.json();
     const rawText = data.choices?.[0]?.message?.content;
     if (!rawText) {
-      console.error("Empty AI response:", JSON.stringify(data).slice(0, 500));
-      return respond({ error: "Empty response from analysis engine" }, 500);
+      console.error("Groq empty response:", JSON.stringify(data).slice(0, 500));
+      return respond({ error: "No results returned" }, 500);
     }
 
     let result: any;
     try {
-      // Clean markdown code blocks if present
-      const clean = rawText.replace(/```json\s*|```\s*/g, "").trim();
+      const clean = rawText.replace(/```json|```/g, "").trim();
       result = JSON.parse(clean);
       console.log("Parsed result keys:", Object.keys(result).join(", "));
     } catch (e) {
-      console.error("JSON parse error:", e);
-      console.error("Raw text (first 1000):", rawText.slice(0, 1000));
-      return respond({ error: "Failed to parse analysis results" }, 500);
+      console.error("JSON parse error:", e, "Raw:", rawText?.slice(0, 300));
+      return respond({ error: "Failed to parse AI response" }, 500);
     }
 
     // Validate minimal structure
@@ -344,9 +350,15 @@ Return a JSON object with EXACTLY these fields:
       return respond({ error: "Incomplete analysis result" }, 500);
     }
 
-    // Save to DB (non-blocking)
+    // Save to DB and get share_id
+    let shareId: string | null = null;
     if (userId !== "anonymous") {
-      saveAudit(userId, companyName, country, industry, result);
+      shareId = await saveAudit(userId, companyName, country, industry, result);
+    }
+
+    // Attach share_id to response
+    if (shareId) {
+      result.share_id = shareId;
     }
 
     return new Response(JSON.stringify(result), {
