@@ -9,7 +9,7 @@ export default function FunnelSection({ data, lang }: Props) {
       <h3 className="text-sm font-mono uppercase tracking-wider text-muted-foreground mb-4">{t(lang, 'section_funnel')}</h3>
       <p className="text-xs text-muted-foreground mb-4">{data.summary}</p>
       <div className="space-y-2 mb-4">
-        {data.steps.map((step, i) => (
+        {(data.steps ?? []).map((step, i) => (
           <div key={i} className="flex items-center gap-3 text-xs">
             <span className="font-mono w-8 text-muted-foreground">{i + 1}.</span>
             <span className="font-medium w-24">{step.step}</span>

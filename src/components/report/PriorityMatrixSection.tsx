@@ -12,10 +12,11 @@ function priorityColor(p: string) {
 }
 
 export default function PriorityMatrixSection({ data, lang }: Props) {
-  const quickWins = data.filter(d => d.impact.toLowerCase() === 'high' && d.effort.toLowerCase() === 'low');
-  const majorProjects = data.filter(d => d.impact.toLowerCase() === 'high' && d.effort.toLowerCase() === 'high');
-  const fillIn = data.filter(d => d.impact.toLowerCase() === 'low' && d.effort.toLowerCase() === 'low');
-  const reconsider = data.filter(d => d.impact.toLowerCase() === 'low' && d.effort.toLowerCase() === 'high');
+  const items = data ?? [];
+  const quickWins = items.filter(d => d.impact?.toLowerCase() === 'high' && d.effort?.toLowerCase() === 'low');
+  const majorProjects = items.filter(d => d.impact?.toLowerCase() === 'high' && d.effort?.toLowerCase() === 'high');
+  const fillIn = items.filter(d => d.impact?.toLowerCase() === 'low' && d.effort?.toLowerCase() === 'low');
+  const reconsider = items.filter(d => d.impact?.toLowerCase() === 'low' && d.effort?.toLowerCase() === 'high');
 
   const quadrants = [
     { label: t(lang, 'quadrant_quickwin'), items: quickWins, border: 'border-success/30' },
@@ -52,7 +53,7 @@ export default function PriorityMatrixSection({ data, lang }: Props) {
             <th className="text-center py-2">{t(lang, 'prio_priority')}</th>
           </tr></thead>
           <tbody>
-            {data.map((item, i) => (
+            {items.map((item, i) => (
               <tr key={i} className="border-b border-border/30">
                 <td className="py-2">{item.action}</td>
                 <td className="py-2 text-center">{item.impact}</td>

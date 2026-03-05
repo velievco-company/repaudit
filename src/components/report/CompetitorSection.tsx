@@ -8,17 +8,69 @@ interface Props {
   lang: AppLanguage;
 }
 
+function trendIndicator(score: number) {
+  if (score >= 70) return { icon: '↑', color: 'text-emerald-400' };
+  if (score >= 40) return { icon: '→', color: 'text-amber-400' };
+  return { icon: '↓', color: 'text-red-400' };
+}
+
 export default function CompetitorSection({ competitors, company, lang }: Props) {
+  const compData = competitors?.data ?? [];
   const chartData = [
-    { name: company, mentions: competitors.data.reduce((a, b) => a + b.mentions, 0) / Math.max(competitors.data.length, 1), sentiment_score: 0, isCompany: true },
-    ...competitors.data.map(c => ({ ...c, isCompany: false })),
+    { name: company, mentions: compData.reduce((a, b) => a + (b.mentions ?? 0), 0) / Math.max(compData.length, 1), sentiment_score: 0, isCompany: true },
+    ...compData.map(c => ({ ...c, isCompany: false })),
   ];
 
   return (
     <div className="bg-card border border-border rounded-xl p-6">
       <h3 className="text-sm font-mono uppercase tracking-wider text-muted-foreground mb-4">{t(lang, 'section_competitors')}</h3>
-      <p className="text-sm text-muted-foreground mb-4">{competitors.summary}</p>
-      {competitors.data.length > 0 && (
+      <p className="text-sm text-muted-foreground mb-4">{competitors?.summary ?? ''}</p>
+
+      {/* Comparison Table */}
+      {compData.length > 0 && (
+        <div className="overflow-x-auto mb-4">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-border text-muted-foreground">
+                <th className="text-left py-2">Company</th>
+                <th className="text-center py-2">Score</th>
+                <th className="text-center py-2">{t(lang, 'mentions')}</th>
+                <th className="text-center py-2">Sentiment</th>
+                <th className="text-center py-2">Trend</th>
+              </tr>
+            </thead>
+            <tbody>
+              {/* Main company row */}
+              <tr className="border-b border-primary/20 bg-primary/5">
+                <td className="py-2 font-medium text-primary">{company}</td>
+                <td className="py-2 text-center font-mono">—</td>
+                <td className="py-2 text-center font-mono">{Math.round(compData.reduce((a, b) => a + (b.mentions ?? 0), 0) / Math.max(compData.length, 1))}</td>
+                <td className="py-2 text-center">—</td>
+                <td className="py-2 text-center">—</td>
+              </tr>
+              {compData.map((c, i) => {
+                const trend = trendIndicator(c.sentiment_score ?? 0);
+                return (
+                  <tr key={i} className="border-b border-border/30">
+                    <td className="py-2 font-medium">{c.name ?? 'Unknown'}</td>
+                    <td className="py-2 text-center font-mono">{c.sentiment_score ?? 0}</td>
+                    <td className="py-2 text-center font-mono">{c.mentions ?? 0}</td>
+                    <td className="py-2 text-center">
+                      <span className={`${(c.sentiment_score ?? 0) >= 60 ? 'text-emerald-400' : (c.sentiment_score ?? 0) >= 40 ? 'text-amber-400' : 'text-red-400'}`}>
+                        {(c.sentiment_score ?? 0) >= 60 ? 'Positive' : (c.sentiment_score ?? 0) >= 40 ? 'Neutral' : 'Negative'}
+                      </span>
+                    </td>
+                    <td className={`py-2 text-center font-bold ${trend.color}`}>{trend.icon}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Chart */}
+      {compData.length > 0 && (
         <div className="h-48">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
