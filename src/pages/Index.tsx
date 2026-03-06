@@ -2,8 +2,6 @@ import { useState, useCallback, useEffect } from 'react';
 import AuditForm from '@/components/AuditForm';
 import AuditReport from '@/components/AuditReport';
 import AnalysisProgress from '@/components/AnalysisProgress';
-import OnboardingTour from '@/components/OnboardingTour';
-import History from '@/pages/History';
 import { AuditFormInput, AuditResponse, AnalysisStep, AppLanguage } from '@/lib/types';
 import { ANALYSIS_STEPS } from '@/lib/audit-steps';
 import { t } from '@/lib/i18n';
@@ -11,7 +9,7 @@ import { copyMarkdownToClipboard, downloadMarkdown } from '@/lib/export-markdown
 import { exportToPDF } from '@/lib/export-pdf';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { Download, Share2, Shield, FileText, Copy, LogOut, User, Clock } from 'lucide-react';
+import { Download, Share2, Shield, FileText, Copy, LogOut, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Session } from '@supabase/supabase-js';
@@ -24,12 +22,11 @@ const LANG_OPTIONS: { value: AppLanguage; flag: string; label: string }[] = [
 
 const Index = () => {
   const [lang, setLang] = useState<AppLanguage>('en');
-  const [activeTab, setActiveTab] = useState<'audit' | 'dossier' | 'history'>('audit');
+  const [activeTab, setActiveTab] = useState<'audit' | 'dossier'>('audit');
   const [result, setResult] = useState<AuditResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [steps, setSteps] = useState<AnalysisStep[]>([]);
   const [showOnboarding, setShowOnboarding] = useState(true);
-  const [showTour, setShowTour] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
 
   useEffect(() => {
@@ -37,12 +34,6 @@ const Index = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
     return () => subscription.unsubscribe();
   }, []);
-
-  useEffect(() => {
-    if (session && !localStorage.getItem('onboarding_completed')) {
-      setShowTour(true);
-    }
-  }, [session]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -72,54 +63,30 @@ const Index = () => {
     try {
       const { data: researchData, error } = await supabase.functions.invoke('reputation-research', {
         body: {
-          companyName: data.companyName,
-          website: data.website,
-          country: data.country,
-          industry: data.industry,
-          timeRange: data.timeRange,
-          language: data.language,
-          depth: data.depth,
-          targetAudience: data.targetAudience,
-          companyStage: data.companyStage,
+          companyName:      data.companyName,
+          website:          data.website,
+          country:          data.country,
+          industry:         data.industry,
+          timeRange:        data.timeRange,
+          language:         data.language,
+          depth:            data.depth,
+          targetAudience:   data.targetAudience,
+          companyStage:     data.companyStage,
           knownCompetitors: data.knownCompetitors,
-          ltv: data.ltv,
-          cac: data.cac,
-          retentionRate: data.retentionRate,
+          ltv:              data.ltv,
+          cac:              data.cac,
+          retentionRate:    data.retentionRate,
           additionalContext: data.additionalContext,
         },
       });
 
-      if (error) {
-        console.error('Edge function error:', JSON.stringify(error));
-        toast.error(error.message || 'Audit failed');
-        throw error;
-      }
-
-      if (!researchData) {
-        console.error('No data returned from function');
-        toast.error('No results returned. Please try again.');
-        setIsLoading(false);
-        return;
-      }
-
-      if (researchData.error) {
-        console.error('API returned error:', researchData.error);
-        toast.error(researchData.error);
-        setIsLoading(false);
-        return;
-      }
-
-      // Log what we got for debugging
-      console.log('Audit result keys:', Object.keys(researchData).join(', '));
-      console.log('overall_score:', researchData.overall_score);
-      console.log('company:', researchData.company);
+      if (error) throw error;
 
       setSteps(prev => prev.map(s => ({ ...s, status: 'done' as const })));
       await new Promise(r => setTimeout(r, 600));
       setResult(researchData as AuditResponse);
       toast.success(t(lang, 'audit_done'));
-
-    } catch (err: any) {
+    } catch (err) {
       console.error('Research failed:', err);
       setSteps(prev => prev.map((s, i) => ({
         ...s,
@@ -136,29 +103,18 @@ const Index = () => {
     await copyMarkdownToClipboard(result);
     toast.success(t(lang, 'copied'));
   };
-  const handleDownloadMd = () => { if (result) downloadMarkdown(result); };
+  const handleDownloadMd  = () => { if (result) downloadMarkdown(result); };
   const handleDownloadPdf = () => { if (result) exportToPDF(result); };
-
-  const handleShare = async () => {
-    if (!result) return;
-    const shareId = (result as any).share_id;
-    if (!shareId) {
-      toast.error('Share link not available for this audit');
-      return;
-    }
-    const url = `${window.location.origin}/report/${shareId}`;
-    await navigator.clipboard.writeText(url);
-    toast.success('Link copied to clipboard!');
-  };
 
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-background">
-        {showTour && <OnboardingTour onComplete={() => setShowTour(false)} />}
 
         {/* Nav */}
         <header className="border-b border-border bg-card/50 backdrop-blur-md sticky top-0 z-50">
           <div className="max-w-6xl mx-auto px-6 flex items-center justify-between h-14">
+
+            {/* Logo */}
             <div className="flex items-center gap-2">
               <Shield className="h-5 w-5 text-primary" />
               <span className="text-base font-semibold tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
@@ -167,40 +123,59 @@ const Index = () => {
             </div>
 
             <div className="flex items-center gap-2">
+              {/* Tabs */}
               <nav className="flex gap-1 mr-1">
-                <button onClick={() => setActiveTab('audit')} className={`px-4 py-2 text-sm font-mono rounded-md transition-colors ${activeTab === 'audit' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
+                <button
+                  onClick={() => setActiveTab('audit')}
+                  className={`px-4 py-2 text-sm font-mono rounded-md transition-colors ${activeTab === 'audit' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                >
                   {t(lang, 'nav_audit')}
                 </button>
-                <button onClick={() => setActiveTab('history')} className={`px-4 py-2 text-sm font-mono rounded-md transition-colors flex items-center gap-1.5 ${activeTab === 'history' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
-                  <Clock className="h-3.5 w-3.5" /> History
-                </button>
-                <button onClick={() => setActiveTab('dossier')} className={`px-4 py-2 text-sm font-mono rounded-md transition-colors ${activeTab === 'dossier' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
+                <button
+                  onClick={() => setActiveTab('dossier')}
+                  className={`px-4 py-2 text-sm font-mono rounded-md transition-colors ${activeTab === 'dossier' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                >
                   {t(lang, 'nav_dossier')}
                 </button>
               </nav>
 
+              {/* Language switcher */}
               <div className="flex items-center gap-0.5 bg-secondary/50 rounded-lg p-0.5">
                 {LANG_OPTIONS.map(opt => (
-                  <button key={opt.value} onClick={() => setLang(opt.value)} className={`px-2.5 py-1 text-xs font-mono rounded-md transition-all ${lang === opt.value ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'}`}>
+                  <button
+                    key={opt.value}
+                    onClick={() => setLang(opt.value)}
+                    className={`px-2.5 py-1 text-xs font-mono rounded-md transition-all ${
+                      lang === opt.value
+                        ? 'bg-primary text-primary-foreground font-semibold'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
                     {opt.flag} {opt.label}
                   </button>
                 ))}
               </div>
 
+              {/* User info + sign out */}
               {session && (
                 <div className="flex items-center gap-2 ml-1 pl-2 border-l border-border">
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-mono cursor-default">
                         <User className="h-3.5 w-3.5" />
-                        <span className="max-w-[120px] truncate hidden sm:block">{session.user.email}</span>
+                        <span className="max-w-[120px] truncate hidden sm:block">
+                          {session.user.email}
+                        </span>
                       </div>
                     </TooltipTrigger>
                     <TooltipContent>{session.user.email}</TooltipContent>
                   </Tooltip>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <button onClick={handleSignOut} className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded">
+                      <button
+                        onClick={handleSignOut}
+                        className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded"
+                      >
                         <LogOut className="h-3.5 w-3.5" />
                       </button>
                     </TooltipTrigger>
@@ -213,16 +188,17 @@ const Index = () => {
         </header>
 
         {/* Main content */}
-        {activeTab === 'history' ? (
-          <History lang={lang} onBack={() => setActiveTab('audit')} />
-        ) : activeTab === 'audit' ? (
+        {activeTab === 'audit' ? (
           <main className="max-w-6xl mx-auto px-6 py-8">
+
             {showOnboarding && !result && !isLoading && (
               <div className="text-center mb-8 py-12">
                 <h1 className="text-3xl md:text-4xl font-bold mb-3" style={{ fontFamily: "'Playfair Display', serif" }}>
                   {t(lang, 'onboarding_title')}
                 </h1>
-                <p className="text-muted-foreground max-w-lg mx-auto text-sm">{t(lang, 'onboarding_sub')}</p>
+                <p className="text-muted-foreground max-w-lg mx-auto text-sm">
+                  {t(lang, 'onboarding_sub')}
+                </p>
               </div>
             )}
 
@@ -248,9 +224,17 @@ const Index = () => {
                   <Button variant="outline" size="sm" className="gap-2 font-mono text-xs" onClick={handleDownloadPdf}>
                     <Download className="h-3.5 w-3.5" /> {t(lang, 'btn_download_pdf')}
                   </Button>
-                  <Button variant="outline" size="sm" className="gap-2 font-mono text-xs" onClick={handleShare}>
+                  <Button variant="outline" size="sm" className="gap-2 font-mono text-xs" disabled>
                     <Share2 className="h-3.5 w-3.5" /> {t(lang, 'btn_share')}
                   </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="outline" size="sm" className="gap-2 font-mono text-xs opacity-50 cursor-not-allowed" disabled>
+                        {t(lang, 'btn_gamma')}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Coming soon</TooltipContent>
+                  </Tooltip>
                 </div>
                 <AuditReport data={result} lang={lang} />
               </>
@@ -262,9 +246,15 @@ const Index = () => {
               <h2 className="text-2xl font-bold mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
                 {t(lang, 'dossier_title')}
               </h2>
-              <p className="text-sm text-muted-foreground mb-2 font-mono uppercase tracking-wider">{t(lang, 'dossier_coming')}</p>
-              <p className="text-muted-foreground max-w-md mx-auto mb-8 text-sm leading-relaxed">{t(lang, 'dossier_desc')}</p>
-              <Button variant="outline" className="font-mono text-xs" disabled>{t(lang, 'dossier_notify')}</Button>
+              <p className="text-sm text-muted-foreground mb-2 font-mono uppercase tracking-wider">
+                {t(lang, 'dossier_coming')}
+              </p>
+              <p className="text-muted-foreground max-w-md mx-auto mb-8 text-sm leading-relaxed">
+                {t(lang, 'dossier_desc')}
+              </p>
+              <Button variant="outline" className="font-mono text-xs" disabled>
+                {t(lang, 'dossier_notify')}
+              </Button>
             </div>
           </main>
         )}

@@ -2,17 +2,24 @@ import { SourceCategory, AppLanguage } from '@/lib/types';
 import { t } from '@/lib/i18n';
 
 interface Props {
-  sources: Record<string, any>;
+  sources: {
+    media: SourceCategory;
+    reviews: SourceCategory;
+    social: SourceCategory;
+    video: SourceCategory;
+    employer: SourceCategory;
+    forums: SourceCategory;
+  };
   lang: AppLanguage;
 }
 
 const sourceConfig = [
-  { key: 'media', i18nKey: 'source_media' },
-  { key: 'reviews', i18nKey: 'source_reviews' },
-  { key: 'social', i18nKey: 'source_social' },
-  { key: 'video', i18nKey: 'source_video' },
-  { key: 'employer', i18nKey: 'source_employer' },
-  { key: 'forums', i18nKey: 'source_forums' },
+  { key: 'media' as const, i18nKey: 'source_media' },
+  { key: 'reviews' as const, i18nKey: 'source_reviews' },
+  { key: 'social' as const, i18nKey: 'source_social' },
+  { key: 'video' as const, i18nKey: 'source_video' },
+  { key: 'employer' as const, i18nKey: 'source_employer' },
+  { key: 'forums' as const, i18nKey: 'source_forums' },
 ];
 
 function sentimentColor(s: string) {
@@ -29,7 +36,6 @@ function scoreColor(score: number) {
 }
 
 export default function SourceAnalysis({ sources, lang }: Props) {
-  if (!sources) return null;
   const sentimentLabel = (s: string) => t(lang, `sentiment_${s}` as any);
 
   return (
@@ -39,22 +45,21 @@ export default function SourceAnalysis({ sources, lang }: Props) {
         {sourceConfig.map(({ key, i18nKey }) => {
           const src = sources[key];
           if (!src) return null;
-          const score = src.score ?? 0;
           return (
             <div key={key} className="bg-secondary/30 border border-border/50 rounded-lg p-4">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm font-medium">{t(lang, i18nKey as any)}</span>
-                <span className={`text-xl font-bold font-mono ${scoreColor(score)}`}>{score}<span className="text-xs text-muted-foreground">/10</span></span>
+                <span className={`text-xl font-bold font-mono ${scoreColor(src.score)}`}>{src.score}<span className="text-xs text-muted-foreground">/10</span></span>
               </div>
-              <p className="text-xs text-muted-foreground mb-2 leading-relaxed">{src.summary ?? ''}</p>
+              <p className="text-xs text-muted-foreground mb-2 leading-relaxed">{src.summary}</p>
               <div className="flex items-center gap-3 text-xs">
-                <span className={sentimentColor(src.sentiment ?? 'neutral')}>● {sentimentLabel(src.sentiment ?? 'neutral')}</span>
+                <span className={sentimentColor(src.sentiment)}>● {sentimentLabel(src.sentiment)}</span>
                 {src.mention_count && <span className="text-muted-foreground">{src.mention_count} {t(lang, 'mentions')}</span>}
                 {src.avg_rating && <span className="text-muted-foreground">★ {src.avg_rating}</span>}
               </div>
-              {(src.top_topics?.length ?? 0) > 0 && (
+              {src.top_topics && src.top_topics.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-2">
-                  {(src.top_topics ?? []).map((topic: string, i: number) => (
+                  {src.top_topics.map((topic, i) => (
                     <span key={i} className="text-[10px] px-2 py-0.5 bg-muted rounded-full text-muted-foreground">{topic}</span>
                   ))}
                 </div>

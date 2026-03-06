@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import AuthGuard from "@/components/AuthGuard";
 import Index from "./pages/Index";
-import SharedReport from "./pages/SharedReport";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,7 +24,6 @@ const App = () => (
               </AuthGuard>
             }
           />
-          <Route path="/report/:shareId" element={<SharedReport />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

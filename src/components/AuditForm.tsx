@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Switch } from '@/components/ui/switch';
 import { ChevronDown, ChevronUp, Search } from 'lucide-react';
 
 interface AuditFormProps {
@@ -23,7 +22,6 @@ export default function AuditForm({ onSubmit, isLoading, lang }: AuditFormProps)
   const [industry, setIndustry] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [showExtended, setShowExtended] = useState(false);
-  const [showFinancials, setShowFinancials] = useState(false);
   const [timeRange, setTimeRange] = useState<AuditFormInput['timeRange']>('12');
   const [language, setLanguage] = useState<AuditFormInput['language']>('all');
   const [depth, setDepth] = useState<AuditFormInput['depth']>('standard');
@@ -49,9 +47,9 @@ export default function AuditForm({ onSubmit, isLoading, lang }: AuditFormProps)
       targetAudience: targetAudience.trim() || undefined,
       companyStage: companyStage || undefined,
       knownCompetitors: knownCompetitors.trim() || undefined,
-      ltv: showFinancials ? ltv.trim() || undefined : undefined,
-      cac: showFinancials ? cac.trim() || undefined : undefined,
-      retentionRate: showFinancials ? retentionRate.trim() || undefined : undefined,
+      ltv: ltv.trim() || undefined,
+      cac: cac.trim() || undefined,
+      retentionRate: retentionRate.trim() || undefined,
       additionalContext: additionalContext.trim() || undefined,
     });
   };
@@ -169,27 +167,7 @@ export default function AuditForm({ onSubmit, isLoading, lang }: AuditFormProps)
             <Label className="text-xs text-muted-foreground font-mono">{t(lang, 'form_competitors')}</Label>
             <Input value={knownCompetitors} onChange={e => setKnownCompetitors(e.target.value)} placeholder={t(lang, 'form_competitors_placeholder')} className="bg-background border-border/50" />
           </div>
-          <div className="space-y-2">
-            <Label className="text-xs text-muted-foreground font-mono">{t(lang, 'form_context')}</Label>
-            <Textarea value={additionalContext} onChange={e => setAdditionalContext(e.target.value)} placeholder={t(lang, 'form_context_placeholder')} className="bg-background border-border/50 min-h-[80px]" />
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
-
-      {/* Financial Impact Analysis Toggle */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-3">
-          <Switch
-            checked={showFinancials}
-            onCheckedChange={setShowFinancials}
-            id="financial-toggle"
-          />
-          <Label htmlFor="financial-toggle" className="text-xs uppercase tracking-wider text-muted-foreground font-mono cursor-pointer">
-            Financial Impact Analysis
-          </Label>
-        </div>
-        {showFinancials && (
-          <div className="grid grid-cols-3 gap-4 pt-2">
+          <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label className="text-xs text-muted-foreground font-mono">{t(lang, 'form_ltv')}</Label>
               <Input value={ltv} onChange={e => setLtv(e.target.value)} placeholder="5000" className="bg-background border-border/50" />
@@ -203,8 +181,12 @@ export default function AuditForm({ onSubmit, isLoading, lang }: AuditFormProps)
               <Input value={retentionRate} onChange={e => setRetentionRate(e.target.value)} placeholder="85" className="bg-background border-border/50" />
             </div>
           </div>
-        )}
-      </div>
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground font-mono">{t(lang, 'form_context')}</Label>
+            <Textarea value={additionalContext} onChange={e => setAdditionalContext(e.target.value)} placeholder={t(lang, 'form_context_placeholder')} className="bg-background border-border/50 min-h-[80px]" />
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       <Button type="submit" className="w-full h-12 text-base font-semibold gap-2" disabled={isLoading || !companyName.trim()}>
         <Search className="h-4 w-4" />

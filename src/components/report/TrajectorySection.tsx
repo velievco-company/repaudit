@@ -33,11 +33,11 @@ export default function TrajectorySection({ data, lang }: Props) {
         </table>
       </div>
 
-      {(data.key_assumptions?.length ?? 0) > 0 && (
+      {data.key_assumptions.length > 0 && (
         <div>
           <h4 className="text-xs font-medium mb-2">{t(lang, 'traj_assumptions')}</h4>
           <ul className="space-y-1">
-            {(data.key_assumptions ?? []).map((a, i) => (
+            {data.key_assumptions.map((a, i) => (
               <li key={i} className="text-xs text-muted-foreground flex items-start gap-2">
                 <span className="text-foreground/30 mt-0.5">—</span>{a}
               </li>

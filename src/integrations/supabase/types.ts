@@ -23,7 +23,6 @@ export type Database = {
           industry: string | null
           result: Json
           score: number | null
-          share_id: string | null
           user_id: string
         }
         Insert: {
@@ -34,7 +33,6 @@ export type Database = {
           industry?: string | null
           result: Json
           score?: number | null
-          share_id?: string | null
           user_id: string
         }
         Update: {
@@ -45,43 +43,27 @@ export type Database = {
           industry?: string | null
           result?: Json
           score?: number | null
-          share_id?: string | null
           user_id?: string
         }
         Relationships: []
       }
       profiles: {
         Row: {
-          company_name: string | null
-          company_size: string | null
-          country: string | null
           created_at: string | null
           email: string | null
-          full_name: string | null
           id: string
-          job_title: string | null
           updated_at: string | null
         }
         Insert: {
-          company_name?: string | null
-          company_size?: string | null
-          country?: string | null
           created_at?: string | null
           email?: string | null
-          full_name?: string | null
           id: string
-          job_title?: string | null
           updated_at?: string | null
         }
         Update: {
-          company_name?: string | null
-          company_size?: string | null
-          country?: string | null
           created_at?: string | null
           email?: string | null
-          full_name?: string | null
           id?: string
-          job_title?: string | null
           updated_at?: string | null
         }
         Relationships: []
