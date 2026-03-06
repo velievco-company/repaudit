@@ -15,30 +15,35 @@ function riskBadge(level: string, lang: AppLanguage) {
 }
 
 export default function LegalSection({ legal, lang }: Props) {
+  if (!legal) return null;
+  const lawsuits = Array.isArray(legal.lawsuits) ? legal.lawsuits : [];
+  const fines = Array.isArray(legal.fines) ? legal.fines : [];
+  const complaints = Array.isArray(legal.complaints) ? legal.complaints : [];
+
   return (
     <div className="bg-card border border-border rounded-xl p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-mono uppercase tracking-wider text-muted-foreground">{t(lang, 'section_legal')}</h3>
-        {riskBadge(legal.risk_level, lang)}
+        {riskBadge(legal.risk_level ?? 'low', lang)}
       </div>
-      <p className="text-sm text-muted-foreground mb-4">{legal.summary}</p>
+      <p className="text-sm text-muted-foreground mb-4">{legal.summary ?? ''}</p>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <p className="text-xs font-mono text-muted-foreground mb-2">{t(lang, 'lawsuits')}</p>
-          {legal.lawsuits.length > 0 ? legal.lawsuits.map((l, i) => (
-            <p key={i} className="text-xs mb-1">— {l}</p>
+          {lawsuits.length > 0 ? lawsuits.map((l, i) => (
+            <p key={i} className="text-xs mb-1">— {typeof l === 'string' ? l : JSON.stringify(l)}</p>
           )) : <p className="text-xs text-muted-foreground/50">{t(lang, 'none_found')}</p>}
         </div>
         <div>
           <p className="text-xs font-mono text-muted-foreground mb-2">{t(lang, 'fines')}</p>
-          {legal.fines.length > 0 ? legal.fines.map((f, i) => (
-            <p key={i} className="text-xs mb-1">— {f}</p>
+          {fines.length > 0 ? fines.map((f, i) => (
+            <p key={i} className="text-xs mb-1">— {typeof f === 'string' ? f : JSON.stringify(f)}</p>
           )) : <p className="text-xs text-muted-foreground/50">{t(lang, 'none_found')}</p>}
         </div>
         <div>
           <p className="text-xs font-mono text-muted-foreground mb-2">{t(lang, 'complaints')}</p>
-          {legal.complaints.length > 0 ? legal.complaints.map((c, i) => (
-            <p key={i} className="text-xs mb-1">— {c}</p>
+          {complaints.length > 0 ? complaints.map((c, i) => (
+            <p key={i} className="text-xs mb-1">— {typeof c === 'string' ? c : JSON.stringify(c)}</p>
           )) : <p className="text-xs text-muted-foreground/50">{t(lang, 'none_found')}</p>}
         </div>
       </div>

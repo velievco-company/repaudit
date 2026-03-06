@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { AuditResponse, AppLanguage } from '@/lib/types';
 import { motion } from 'framer-motion';
 import { Switch } from '@/components/ui/switch';
@@ -37,17 +37,35 @@ const fadeUp = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
 };
 
-function SafeSection({ children }: { children: React.ReactNode }) {
-  try {
-    return <>{children}</>;
-  } catch (e) {
-    console.error('Section render error:', e);
-    return null;
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(e: any, info: any) {
+    console.error('Section render error:', e, info);
+  }
+  render() {
+    return this.state.hasError ? null : this.props.children;
   }
 }
 
 export default function AuditReport({ data, lang }: Props) {
   const [showFinancials, setShowFinancials] = useState(false);
+
+  if (!data) return null;
+  console.log('Rendering report for:', data.company, 'score:', data.overall_score);
+
+  // Safely extract summary
+  const summary = typeof data.summary === 'string'
+    ? { main_activity: data.summary, key_narratives: [], key_event: '' }
+    : (data.summary ?? { main_activity: 'No summary available', key_narratives: [], key_event: '' });
 
   return (
     <motion.div
@@ -56,77 +74,125 @@ export default function AuditReport({ data, lang }: Props) {
       animate="visible"
       className="space-y-6"
     >
-      <motion.div variants={fadeUp}>
-        <ScoreHero score={data.overall_score ?? 0} verdict={data.verdict ?? ''} dataDate={data.data_date ?? ''} confidence={data.confidence ?? 'low'} lang={lang} />
-      </motion.div>
-      <motion.div variants={fadeUp}>
-        <SummaryCard summary={data.summary} company={data.company ?? ''} lang={lang} />
-      </motion.div>
-      {(data.sentiment_timeline?.length ?? 0) > 0 && (
+      <ErrorBoundary>
         <motion.div variants={fadeUp}>
-          <SentimentTimeline data={data.sentiment_timeline} lang={lang} />
+          <ScoreHero score={data.overall_score ?? 0} verdict={data.verdict ?? ''} dataDate={data.data_date ?? ''} confidence={data.confidence ?? 'low'} lang={lang} />
         </motion.div>
+      </ErrorBoundary>
+
+      <ErrorBoundary>
+        <motion.div variants={fadeUp}>
+          <SummaryCard summary={summary} company={data.company ?? ''} lang={lang} />
+        </motion.div>
+      </ErrorBoundary>
+
+      {(data.sentiment_timeline?.length ?? 0) > 0 && (
+        <ErrorBoundary>
+          <motion.div variants={fadeUp}>
+            <SentimentTimeline data={data.sentiment_timeline ?? []} lang={lang} />
+          </motion.div>
+        </ErrorBoundary>
       )}
-      <motion.div variants={fadeUp}>
-        <SourceAnalysis sources={data.sources} lang={lang} />
-      </motion.div>
+
+      {data.sources && (
+        <ErrorBoundary>
+          <motion.div variants={fadeUp}>
+            <SourceAnalysis sources={data.sources} lang={lang} />
+          </motion.div>
+        </ErrorBoundary>
+      )}
 
       {data.negative_exposure && (data.negative_exposure.items?.length ?? 0) > 0 && (
-        <motion.div variants={fadeUp}>
-          <NegativeExposureSection data={data.negative_exposure} lang={lang} />
-        </motion.div>
+        <ErrorBoundary>
+          <motion.div variants={fadeUp}>
+            <NegativeExposureSection data={data.negative_exposure} lang={lang} />
+          </motion.div>
+        </ErrorBoundary>
       )}
 
       {data.trust_signals && (data.trust_signals.items?.length ?? 0) > 0 && (
-        <motion.div variants={fadeUp}>
-          <TrustSignalSection data={data.trust_signals} lang={lang} />
-        </motion.div>
+        <ErrorBoundary>
+          <motion.div variants={fadeUp}>
+            <TrustSignalSection data={data.trust_signals} lang={lang} />
+          </motion.div>
+        </ErrorBoundary>
       )}
 
-      <motion.div variants={fadeUp}>
-        <LegalSection legal={data.legal} lang={lang} />
-      </motion.div>
-      <motion.div variants={fadeUp}>
-        <ManagementSection management={data.management} lang={lang} />
-      </motion.div>
-      <motion.div variants={fadeUp}>
-        <CompetitorSection competitors={data.competitors} company={data.company ?? ''} lang={lang} />
-      </motion.div>
+      {data.legal && (
+        <ErrorBoundary>
+          <motion.div variants={fadeUp}>
+            <LegalSection legal={data.legal} lang={lang} />
+          </motion.div>
+        </ErrorBoundary>
+      )}
+
+      {data.management && (
+        <ErrorBoundary>
+          <motion.div variants={fadeUp}>
+            <ManagementSection management={data.management} lang={lang} />
+          </motion.div>
+        </ErrorBoundary>
+      )}
+
+      {data.competitors && (
+        <ErrorBoundary>
+          <motion.div variants={fadeUp}>
+            <CompetitorSection competitors={data.competitors} company={data.company ?? ''} lang={lang} />
+          </motion.div>
+        </ErrorBoundary>
+      )}
 
       {data.sentiment_heatmap && (data.sentiment_heatmap?.length ?? 0) > 0 && (
-        <motion.div variants={fadeUp}>
-          <SentimentHeatmapSection data={data.sentiment_heatmap} lang={lang} />
-        </motion.div>
+        <ErrorBoundary>
+          <motion.div variants={fadeUp}>
+            <SentimentHeatmapSection data={data.sentiment_heatmap} lang={lang} />
+          </motion.div>
+        </ErrorBoundary>
       )}
 
       {data.competitive_trust && (data.competitive_trust.scores?.length ?? 0) > 0 && (
-        <motion.div variants={fadeUp}>
-          <CompetitiveTrustSection data={data.competitive_trust} lang={lang} />
-        </motion.div>
+        <ErrorBoundary>
+          <motion.div variants={fadeUp}>
+            <CompetitiveTrustSection data={data.competitive_trust} lang={lang} />
+          </motion.div>
+        </ErrorBoundary>
       )}
 
-      <motion.div variants={fadeUp}>
-        <FlagsSection redFlags={data.red_flags} greenFlags={data.green_flags} lang={lang} />
-      </motion.div>
-      <motion.div variants={fadeUp}>
-        <ESGSection esg={data.esg} lang={lang} />
-      </motion.div>
+      <ErrorBoundary>
+        <motion.div variants={fadeUp}>
+          <FlagsSection redFlags={data.red_flags ?? []} greenFlags={data.green_flags ?? []} lang={lang} />
+        </motion.div>
+      </ErrorBoundary>
+
+      {data.esg && (
+        <ErrorBoundary>
+          <motion.div variants={fadeUp}>
+            <ESGSection esg={data.esg} lang={lang} />
+          </motion.div>
+        </ErrorBoundary>
+      )}
 
       {data.priority_matrix && (data.priority_matrix?.length ?? 0) > 0 && (
-        <motion.div variants={fadeUp}>
-          <PriorityMatrixSection data={data.priority_matrix} lang={lang} />
-        </motion.div>
+        <ErrorBoundary>
+          <motion.div variants={fadeUp}>
+            <PriorityMatrixSection data={data.priority_matrix} lang={lang} />
+          </motion.div>
+        </ErrorBoundary>
       )}
 
       {data.trajectory && (
-        <motion.div variants={fadeUp}>
-          <TrajectorySection data={data.trajectory} lang={lang} />
-        </motion.div>
+        <ErrorBoundary>
+          <motion.div variants={fadeUp}>
+            <TrajectorySection data={data.trajectory} lang={lang} />
+          </motion.div>
+        </ErrorBoundary>
       )}
 
-      <motion.div variants={fadeUp}>
-        <RecommendationsSection recommendations={data.recommendations} lang={lang} />
-      </motion.div>
+      <ErrorBoundary>
+        <motion.div variants={fadeUp}>
+          <RecommendationsSection recommendations={data.recommendations ?? { urgent: [], mid_term: [], long_term: [] }} lang={lang} />
+        </motion.div>
+      </ErrorBoundary>
 
       {/* Financial Impact Toggle */}
       <motion.div variants={fadeUp}>
@@ -139,16 +205,28 @@ export default function AuditReport({ data, lang }: Props) {
       {showFinancials && (
         <>
           {data.ltv_roi_model && (
-            <motion.div variants={fadeUp}>
-              <LTVRoiSection data={data.ltv_roi_model} lang={lang} />
-            </motion.div>
+            <ErrorBoundary>
+              <motion.div variants={fadeUp}>
+                <LTVRoiSection data={data.ltv_roi_model} lang={lang} />
+              </motion.div>
+            </ErrorBoundary>
           )}
           {data.funnel_analysis && (data.funnel_analysis.steps?.length ?? 0) > 0 && (
-            <motion.div variants={fadeUp}>
-              <FunnelSection data={data.funnel_analysis} lang={lang} />
-            </motion.div>
+            <ErrorBoundary>
+              <motion.div variants={fadeUp}>
+                <FunnelSection data={data.funnel_analysis} lang={lang} />
+              </motion.div>
+            </ErrorBoundary>
           )}
         </>
+      )}
+
+      {(data as any).data_sources && (
+        <ErrorBoundary>
+          <motion.div variants={fadeUp}>
+            <DataSourcesSection sources={(data as any).data_sources ?? []} lang={lang} />
+          </motion.div>
+        </ErrorBoundary>
       )}
     </motion.div>
   );
