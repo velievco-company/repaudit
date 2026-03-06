@@ -472,6 +472,74 @@ const auditSchema = {
   ],
 };
 
+// ── NORMALIZE GROQ RESPONSE INTO EXPECTED SCHEMA ─────────────────────────────
+function normalizeResult(r: any, companyName: string): any {
+  if (r.audit && typeof r.audit === "object") {
+    const flat: any = { ...r.audit };
+    for (const key of Object.keys(r)) {
+      if (key !== "audit" && !flat[key]) flat[key] = r[key];
+    }
+    r = flat;
+  }
+  const sources = r.sources ?? {};
+  if (r.news_reputation && !sources.media) {
+    sources.media = {
+      sentiment: r.news_reputation.overall_sentiment ?? r.news_reputation.sentiment ?? "neutral",
+      score: r.news_reputation.sentiment_score ?? r.news_reputation.score ?? 50,
+      volume: r.news_reputation.article_count ?? r.news_reputation.volume ?? 0,
+      top_outlets: r.news_reputation.top_sources ?? r.news_reputation.outlets ?? [],
+      key_topics: r.news_reputation.key_topics ?? r.news_reputation.topics ?? [],
+      summary: r.news_reputation.summary ?? "",
+    };
+  }
+  if (r.reviews && !sources.reviews) {
+    sources.reviews = {
+      sentiment: r.reviews.overall_sentiment ?? r.reviews.sentiment ?? "neutral",
+      score: r.reviews.average_rating ? Math.round(r.reviews.average_rating * 20) : (r.reviews.score ?? 50),
+      platforms: r.reviews.platforms ?? [],
+      average_rating: r.reviews.average_rating ?? null,
+      summary: r.reviews.summary ?? "",
+    };
+  }
+  if (r.social_media && !sources.social) {
+    sources.social = {
+      sentiment: r.social_media.overall_sentiment ?? r.social_media.sentiment ?? "neutral",
+      score: r.social_media.score ?? r.social_media.sentiment_score ?? 50,
+      platforms: r.social_media.platforms ?? [],
+      summary: r.social_media.summary ?? "",
+    };
+  }
+  const overall_score = r.overall_score ?? r.reputation_score ?? r.score ??
+    Math.round(
+      ((sources.media?.score ?? 50) * 0.35) +
+      ((sources.reviews?.score ?? 50) * 0.35) +
+      ((sources.social?.score ?? 50) * 0.30)
+    );
+  const summary = typeof r.summary === "string"
+    ? { main_activity: r.summary, key_narratives: [], key_event: "" }
+    : (r.summary ?? { main_activity: "No summary available", key_narratives: [], key_event: "" });
+  const legal = r.legal ?? { lawsuits: 0, fines: 0, complaints: 0, risk_level: "low", summary: "No legal issues found" };
+  const management = r.management ?? { persons: [], summary: "No management data available" };
+  const competitors = r.competitors ?? { data: [], summary: "No competitor data available" };
+  const recommendations = r.recommendations ?? { urgent: [], mid_term: [], long_term: [] };
+  const red_flags = Array.isArray(r.red_flags) ? r.red_flags : [];
+  const green_flags = Array.isArray(r.green_flags) ? r.green_flags : [];
+  const esg = r.esg ?? {
+    ecology: { score: 50, summary: "" }, labor: { score: 50, summary: "" },
+    data_privacy: { score: 50, summary: "" }, overall: { score: 50, summary: "" }, summary: "",
+  };
+  return {
+    ...r, company: r.company ?? companyName, overall_score,
+    verdict: r.verdict ?? (overall_score >= 70 ? "positive" : overall_score >= 40 ? "neutral" : "negative"),
+    confidence: r.confidence ?? "medium",
+    data_date: r.data_date ?? new Date().toISOString().slice(0, 10),
+    period: r.period ?? "12 months",
+    summary, sources, legal, management, competitors, recommendations,
+    red_flags, green_flags, esg,
+    sentiment_timeline: Array.isArray(r.sentiment_timeline) ? r.sentiment_timeline : [],
+  };
+}
+
 // ── MAIN ───────────────────────────────────────────────────────────────────────
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -610,11 +678,13 @@ ${realWorldData}
         result = flat;
       }
 
-      console.log("Groq result keys:", Object.keys(result).join(", "));
-      console.log("Has overall_score:", !!result.overall_score);
-      console.log("Has summary:", !!result.summary);
-      console.log("Has legal:", !!result.legal);
-      console.log("Has competitors:", !!result.competitors);
+      console.log("Groq raw keys:", Object.keys(result).join(", "));
+
+      // ── NORMALIZE: map whatever Groq returned into the expected schema ──────
+      result = normalizeResult(result, companyName);
+
+      console.log("Normalized keys:", Object.keys(result).join(", "));
+      console.log("overall_score:", result.overall_score);
     } catch (e) {
       console.error("JSON parse error:", e);
       console.error("Raw text sample:", rawText?.slice(0, 500));
