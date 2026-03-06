@@ -169,20 +169,6 @@ export default function AuditForm({ onSubmit, isLoading, lang }: AuditFormProps)
             <Label className="text-xs text-muted-foreground font-mono">{t(lang, 'form_competitors')}</Label>
             <Input value={knownCompetitors} onChange={e => setKnownCompetitors(e.target.value)} placeholder={t(lang, 'form_competitors_placeholder')} className="bg-background border-border/50" />
           </div>
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground font-mono">{t(lang, 'form_ltv')}</Label>
-              <Input value={ltv} onChange={e => setLtv(e.target.value)} placeholder="5000" className="bg-background border-border/50" />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground font-mono">{t(lang, 'form_cac')}</Label>
-              <Input value={cac} onChange={e => setCac(e.target.value)} placeholder="500" className="bg-background border-border/50" />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground font-mono">{t(lang, 'form_retention')}</Label>
-              <Input value={retentionRate} onChange={e => setRetentionRate(e.target.value)} placeholder="85" className="bg-background border-border/50" />
-            </div>
-          </div>
           <div className="space-y-2">
             <Label className="text-xs text-muted-foreground font-mono">{t(lang, 'form_context')}</Label>
             <Textarea value={additionalContext} onChange={e => setAdditionalContext(e.target.value)} placeholder={t(lang, 'form_context_placeholder')} className="bg-background border-border/50 min-h-[80px]" />
