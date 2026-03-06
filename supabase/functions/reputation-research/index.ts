@@ -599,9 +599,21 @@ ${realWorldData}
     try {
       const clean = rawText.replace(/```json|```/g, "").trim();
       result = JSON.parse(clean);
+
+      // Unwrap if Groq returned nested structure e.g. { audit: { ... } }
+      if (result.audit && typeof result.audit === "object" && !result.overall_score) {
+        const flat: any = { ...result.audit };
+        // merge any top-level extra keys (news_reputation, reviews, etc.)
+        for (const key of Object.keys(result)) {
+          if (key !== "audit" && !flat[key]) flat[key] = result[key];
+        }
+        result = flat;
+      }
+
       console.log("Groq result keys:", Object.keys(result).join(", "));
-      console.log("Has legal:", !!result.legal);
+      console.log("Has overall_score:", !!result.overall_score);
       console.log("Has summary:", !!result.summary);
+      console.log("Has legal:", !!result.legal);
       console.log("Has competitors:", !!result.competitors);
     } catch (e) {
       console.error("JSON parse error:", e);
