@@ -38,7 +38,6 @@ const Index = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Show onboarding tour for first-time users
   useEffect(() => {
     if (session && !localStorage.getItem('onboarding_completed')) {
       setShowTour(true);
@@ -91,32 +90,35 @@ const Index = () => {
       });
 
       if (error) {
-        console.error('Edge function error:', error);
+        console.error('Edge function error:', JSON.stringify(error));
+        toast.error(error.message || 'Audit failed');
         throw error;
       }
 
-      if (!researchData || researchData.error) {
-        console.error('API returned error:', researchData?.error);
-        toast.error(researchData?.error || 'Analysis returned no data');
-        setSteps(prev => prev.map((s, i) => ({
-          ...s,
-          status: i === prev.length - 1 ? 'error' as const : s.status,
-        })));
+      if (!researchData) {
+        console.error('No data returned from function');
+        toast.error('No results returned. Please try again.');
         setIsLoading(false);
         return;
       }
 
-      if (!researchData.company || typeof researchData.overall_score !== 'number') {
-        console.error('Invalid result structure:', Object.keys(researchData));
-        toast.error('Report loaded but data is incomplete. Check console.');
+      if (researchData.error) {
+        console.error('API returned error:', researchData.error);
+        toast.error(researchData.error);
         setIsLoading(false);
         return;
       }
+
+      // Log what we got for debugging
+      console.log('Audit result keys:', Object.keys(researchData).join(', '));
+      console.log('overall_score:', researchData.overall_score);
+      console.log('company:', researchData.company);
 
       setSteps(prev => prev.map(s => ({ ...s, status: 'done' as const })));
       await new Promise(r => setTimeout(r, 600));
       setResult(researchData as AuditResponse);
       toast.success(t(lang, 'audit_done'));
+
     } catch (err: any) {
       console.error('Research failed:', err);
       setSteps(prev => prev.map((s, i) => ({
