@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { AuditResponse, AppLanguage } from '@/lib/types';
 import { motion } from 'framer-motion';
 import { Switch } from '@/components/ui/switch';
@@ -47,7 +46,6 @@ function SafeSection({ children }: { children: React.ReactNode }) {
 }
 
 export default function AuditReport({ data, lang }: Props) {
-  const [showFinancials, setShowFinancials] = useState(false);
 
   return (
     <motion.div
@@ -128,27 +126,16 @@ export default function AuditReport({ data, lang }: Props) {
         <RecommendationsSection recommendations={data.recommendations} lang={lang} />
       </motion.div>
 
-      {/* Financial Impact Toggle */}
-      <motion.div variants={fadeUp}>
-        <div className="flex items-center gap-3 py-3 px-1">
-          <Switch checked={showFinancials} onCheckedChange={setShowFinancials} />
-          <span className="text-sm font-medium text-muted-foreground">Show Financial Impact Analysis</span>
-        </div>
-      </motion.div>
-
-      {showFinancials && (
-        <>
-          {data.ltv_roi_model && (
-            <motion.div variants={fadeUp}>
-              <LTVRoiSection data={data.ltv_roi_model} lang={lang} />
-            </motion.div>
-          )}
-          {data.funnel_analysis && (data.funnel_analysis.steps?.length ?? 0) > 0 && (
-            <motion.div variants={fadeUp}>
-              <FunnelSection data={data.funnel_analysis} lang={lang} />
-            </motion.div>
-          )}
-        </>
+      {/* Financial Impact — shown automatically when LTV data was provided */}
+      {data.ltv_roi_model && (data.ltv_roi_model.ltv ?? 0) > 0 && (
+        <motion.div variants={fadeUp}>
+          <LTVRoiSection data={data.ltv_roi_model} lang={lang} />
+        </motion.div>
+      )}
+      {data.funnel_analysis && (data.funnel_analysis.steps?.length ?? 0) > 0 && (
+        <motion.div variants={fadeUp}>
+          <FunnelSection data={data.funnel_analysis} lang={lang} />
+        </motion.div>
       )}
     </motion.div>
   );
