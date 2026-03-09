@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { AuditResponse, AppLanguage } from '@/lib/types';
 import { t } from '@/lib/i18n';
 import AuditReport from '@/components/AuditReport';
-import { Shield, ArrowLeft, Loader2, Search } from 'lucide-react';
+import { ArrowLeft, Loader2, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 
@@ -54,10 +54,10 @@ export default function History({ lang, onBack }: Props) {
     <div className="max-w-4xl mx-auto px-6 py-8">
       <div className="flex items-center gap-3 mb-8">
         <Button variant="ghost" size="sm" onClick={onBack} className="gap-2">
-          <ArrowLeft className="h-4 w-4" /> Back
+          <ArrowLeft className="h-4 w-4" /> {t(lang, 'history_back')}
         </Button>
-        <h1 className="text-2xl font-bold" style={{ fontFamily: "'Playfair Display', serif" }}>
-          Audit History
+        <h1 className="text-2xl font-bold">
+          {t(lang, 'history_title')}
         </h1>
       </div>
 
@@ -68,8 +68,8 @@ export default function History({ lang, onBack }: Props) {
       ) : audits.length === 0 ? (
         <div className="text-center py-20 bg-card border border-border rounded-xl">
           <Search className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
-          <p className="text-muted-foreground mb-4">No audits yet</p>
-          <Button variant="outline" onClick={onBack}>Run your first audit</Button>
+          <p className="text-muted-foreground mb-4">{t(lang, 'history_empty')}</p>
+          <Button variant="outline" onClick={onBack}>{t(lang, 'history_first_audit')}</Button>
         </div>
       ) : (
         <div className="space-y-3">

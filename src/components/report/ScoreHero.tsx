@@ -43,7 +43,7 @@ export default function ScoreHero({ score, verdict, dataDate, confidence, lang }
           </div>
         </div>
         <div>
-          <h2 className="text-xl font-semibold mb-1" style={{ fontFamily: "'Playfair Display', serif" }}>{verdict}</h2>
+          <h2 className="text-xl font-semibold mb-1">{verdict}</h2>
           <div className="flex items-center justify-center gap-3 text-xs text-muted-foreground font-mono">
             <span>{t(lang, 'data_as_of')} {dataDate}</span>
             <span>·</span>
