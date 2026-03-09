@@ -206,7 +206,8 @@ CRITICAL RULES:
 - All arrays must have at least 1 item.
 - sentiment_timeline must have 6-12 monthly data points.
 - Each source category score is 1-10.
-- overall_score is 0-100.`;
+- overall_score is 0-100.
+- competitors.data MUST contain 3-5 real named competitor companies. Use your knowledge of the industry. Never use generic names like "Competitor A" or leave the array empty.`;
 
     const userMessage = `Perform a full reputation audit for: ${companyName}
 ${website ? `Website: ${website}` : ""}${country ? ` | Country: ${country}` : ""}${industry ? ` | Industry: ${industry}` : ""}
@@ -247,7 +248,7 @@ Return a JSON object with EXACTLY these fields:
     "summary": "string"
   },
   "competitors": {
-    "data": [{"name": "string", "mentions": number, "sentiment_score": number}],
+    "data": [{"name": "REAL competitor company name (not generic)", "mentions": number, "sentiment_score": number 0-100}],
     "summary": "string"
   },
   "red_flags": [{"text": "string", "severity": "critical|warning|info"}],
