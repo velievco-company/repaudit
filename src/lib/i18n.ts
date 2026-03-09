@@ -45,6 +45,8 @@ export const translations = {
     form_stage_public: 'Public',
     form_competitors: 'Known Competitors (comma-separated)',
     form_competitors_placeholder: 'Competitor 1, Competitor 2',
+    form_financial_toggle: 'Financial Impact Analysis',
+    form_financial_toggle_hint: 'Add LTV / CAC data to get revenue loss estimates',
     form_ltv: 'Average Customer LTV ($)',
     form_cac: 'CAC ($)',
     form_retention: 'Retention Rate (%)',
@@ -81,6 +83,7 @@ export const translations = {
     section_summary: 'Summary',
     section_timeline: 'Sentiment Dynamics',
     section_sources: 'Source Analysis',
+    section_data_sources: 'Data Sources',
     section_legal: '⚖️ Legal & Regulatory Footprint',
     section_management: '👤 Top Management Reputation',
     section_competitors: '📊 Competitive Context (Share of Voice)',
@@ -224,11 +227,45 @@ export const translations = {
     traj_optimised: 'Optimised',
     traj_assumptions: 'Key Assumptions',
 
+    // Competitor table
+    comp_table_company: 'Company',
+    comp_table_score: 'Score',
+    comp_table_sentiment: 'Sentiment',
+    comp_table_trend: 'Trend',
+
     // Dossier
     dossier_title: 'Company Dossier',
     dossier_coming: 'Coming Soon',
     dossier_desc: 'Full dossier: ownership structure, financials, key people, history, partners and contractors.',
     dossier_notify: 'Notify me',
+
+    // History
+    history_title: 'Audit History',
+    history_empty: 'No audits yet',
+    history_first_audit: 'Run your first audit',
+    history_back: 'Back',
+    history_view_report: 'View Report',
+
+    // Limits
+    audits_this_month: 'audits this month',
+    error_limit_reached: 'You have used all 3 free audits this month.',
+
+    // Onboarding tour
+    tour_welcome_title: 'Welcome to RepAudit',
+    tour_welcome_desc: 'AI-powered reputation intelligence. Get a full scored audit of any company in 60 seconds.',
+    tour_form_title: 'Enter any company name',
+    tour_form_desc: 'Add website, country, industry for more accurate results. Use Extended Profile for deeper context.',
+    tour_metrics_title: '15+ reputation metrics',
+    tour_metrics_desc: 'Score, Sentiment Timeline, Legal risks, Competitors, ESG, Priority Matrix, Trajectory Forecast and more.',
+    tour_export_title: 'Export & Share',
+    tour_export_desc: 'Download as PDF, export Markdown, or share a public link with your team or client.',
+    tour_next: 'Next',
+    tour_prev: 'Previous',
+    tour_skip: 'Skip',
+    tour_start: 'Get Started',
+
+    // Data sources
+    sources_analyzed: 'sources analyzed',
   },
 
   ru: {
@@ -272,6 +309,8 @@ export const translations = {
     form_stage_public: 'Public',
     form_competitors: 'Известные конкуренты (через запятую)',
     form_competitors_placeholder: 'Конкурент 1, Конкурент 2',
+    form_financial_toggle: 'Анализ финансового влияния',
+    form_financial_toggle_hint: 'Добавьте LTV / CAC для оценки потерь дохода',
     form_ltv: 'Средний LTV клиента ($)',
     form_cac: 'CAC ($)',
     form_retention: 'Retention rate (%)',
@@ -305,16 +344,17 @@ export const translations = {
     section_summary: 'Сводка',
     section_timeline: 'Динамика тональности',
     section_sources: 'Анализ по источникам',
+    section_data_sources: 'Источники данных',
     section_legal: '⚖️ Юридический и регуляторный след',
     section_management: '👤 Репутация топ-менеджмента',
     section_competitors: '📊 Конкурентный контекст (Share of Voice)',
     section_flags: 'Красные и зелёные флаги',
     section_esg: '🌍 ESG и этические риски',
     section_recommendations: '📋 Рекомендации по управлению репутацией',
-    section_negative: '🔎 Negative Exposure Mapping',
+    section_negative: '🔎 Карта негативного воздействия',
     section_trust: '🛡️ Аудит доверительных сигналов',
     section_funnel: '📉 Анализ воронки входящих клиентов',
-    section_heatmap: '🧠 Sentiment Heatmap',
+    section_heatmap: '🧠 Тепловая карта тональности',
     section_ltv: '💰 Потери доходов (LTV модель)',
     section_competitive_trust: '🧩 Конкурентный разрыв доверия',
     section_priority: '🎯 Матрица приоритетов',
@@ -433,10 +473,39 @@ export const translations = {
     traj_optimised: 'При оптимизации',
     traj_assumptions: 'Ключевые допущения',
 
+    comp_table_company: 'Компания',
+    comp_table_score: 'Оценка',
+    comp_table_sentiment: 'Тональность',
+    comp_table_trend: 'Тренд',
+
     dossier_title: 'Досье компании',
-    dossier_coming: 'Coming Soon',
+    dossier_coming: 'Скоро',
     dossier_desc: 'Полное досье: структура собственности, финансовые показатели, ключевые персоны, история, партнёры и контрагенты.',
     dossier_notify: 'Уведомить меня',
+
+    history_title: 'История аудитов',
+    history_empty: 'Аудитов пока нет',
+    history_first_audit: 'Запустить первый аудит',
+    history_back: 'Назад',
+    history_view_report: 'Посмотреть отчёт',
+
+    audits_this_month: 'аудитов в этом месяце',
+    error_limit_reached: 'Вы использовали все 3 бесплатных аудита в этом месяце.',
+
+    tour_welcome_title: 'Добро пожаловать в RepAudit',
+    tour_welcome_desc: 'AI-платформа для репутационной разведки. Получите полный аудит любой компании за 60 секунд.',
+    tour_form_title: 'Введите название компании',
+    tour_form_desc: 'Добавьте сайт, страну, отрасль для более точных результатов. Используйте расширенный профиль для глубокого анализа.',
+    tour_metrics_title: '15+ метрик репутации',
+    tour_metrics_desc: 'Скор, динамика тональности, юридические риски, конкуренты, ESG, матрица приоритетов, прогноз траектории и другое.',
+    tour_export_title: 'Экспорт и шаринг',
+    tour_export_desc: 'Скачайте PDF, экспортируйте Markdown или поделитесь публичной ссылкой с командой или клиентом.',
+    tour_next: 'Далее',
+    tour_prev: 'Назад',
+    tour_skip: 'Пропустить',
+    tour_start: 'Начать',
+
+    sources_analyzed: 'источников проанализировано',
   },
 
   es: {
@@ -480,6 +549,8 @@ export const translations = {
     form_stage_public: 'Pública',
     form_competitors: 'Competidores conocidos (separados por coma)',
     form_competitors_placeholder: 'Competidor 1, Competidor 2',
+    form_financial_toggle: 'Análisis de impacto financiero',
+    form_financial_toggle_hint: 'Agrega LTV / CAC para estimar pérdidas de ingresos',
     form_ltv: 'LTV promedio del cliente ($)',
     form_cac: 'CAC ($)',
     form_retention: 'Tasa de retención (%)',
@@ -513,6 +584,7 @@ export const translations = {
     section_summary: 'Resumen',
     section_timeline: 'Dinámica de sentimiento',
     section_sources: 'Análisis por fuentes',
+    section_data_sources: 'Fuentes de datos',
     section_legal: '⚖️ Huella Legal y Regulatoria',
     section_management: '👤 Reputación de Directivos',
     section_competitors: '📊 Contexto Competitivo (Share of Voice)',
@@ -641,10 +713,39 @@ export const translations = {
     traj_optimised: 'Optimizado',
     traj_assumptions: 'Supuestos clave',
 
+    comp_table_company: 'Empresa',
+    comp_table_score: 'Puntuación',
+    comp_table_sentiment: 'Sentimiento',
+    comp_table_trend: 'Tendencia',
+
     dossier_title: 'Expediente de Empresa',
     dossier_coming: 'Próximamente',
     dossier_desc: 'Expediente completo: estructura de propiedad, datos financieros, personas clave, historia, socios y contratistas.',
     dossier_notify: 'Notificarme',
+
+    history_title: 'Historial de auditorías',
+    history_empty: 'No hay auditorías aún',
+    history_first_audit: 'Ejecutar primera auditoría',
+    history_back: 'Volver',
+    history_view_report: 'Ver informe',
+
+    audits_this_month: 'auditorías este mes',
+    error_limit_reached: 'Has usado las 3 auditorías gratuitas de este mes.',
+
+    tour_welcome_title: 'Bienvenido a RepAudit',
+    tour_welcome_desc: 'Inteligencia reputacional con IA. Obtén una auditoría completa de cualquier empresa en 60 segundos.',
+    tour_form_title: 'Introduce cualquier empresa',
+    tour_form_desc: 'Agrega sitio web, país, sector para resultados más precisos. Usa el perfil extendido para mayor profundidad.',
+    tour_metrics_title: '15+ métricas de reputación',
+    tour_metrics_desc: 'Puntuación, línea temporal de sentimiento, riesgos legales, competidores, ESG, matriz de prioridades y más.',
+    tour_export_title: 'Exportar y compartir',
+    tour_export_desc: 'Descarga como PDF, exporta Markdown o comparte un enlace público con tu equipo o cliente.',
+    tour_next: 'Siguiente',
+    tour_prev: 'Anterior',
+    tour_skip: 'Omitir',
+    tour_start: 'Comenzar',
+
+    sources_analyzed: 'fuentes analizadas',
   },
 } as const;
 

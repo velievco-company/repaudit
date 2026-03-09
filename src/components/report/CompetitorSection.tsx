@@ -14,6 +14,12 @@ function trendIndicator(score: number) {
   return { icon: '↓', color: 'text-red-400' };
 }
 
+function sentimentLabel(score: number, lang: AppLanguage) {
+  if (score >= 60) return t(lang, 'sentiment_positive');
+  if (score >= 40) return t(lang, 'sentiment_neutral');
+  return t(lang, 'sentiment_negative');
+}
+
 export default function CompetitorSection({ competitors, company, lang }: Props) {
   const compData = competitors?.data ?? [];
   const chartData = [
@@ -32,11 +38,11 @@ export default function CompetitorSection({ competitors, company, lang }: Props)
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-border text-muted-foreground">
-                <th className="text-left py-2">Company</th>
-                <th className="text-center py-2">Score</th>
+                <th className="text-left py-2">{t(lang, 'comp_table_company')}</th>
+                <th className="text-center py-2">{t(lang, 'comp_table_score')}</th>
                 <th className="text-center py-2">{t(lang, 'mentions')}</th>
-                <th className="text-center py-2">Sentiment</th>
-                <th className="text-center py-2">Trend</th>
+                <th className="text-center py-2">{t(lang, 'comp_table_sentiment')}</th>
+                <th className="text-center py-2">{t(lang, 'comp_table_trend')}</th>
               </tr>
             </thead>
             <tbody>
@@ -57,7 +63,7 @@ export default function CompetitorSection({ competitors, company, lang }: Props)
                     <td className="py-2 text-center font-mono">{c.mentions ?? 0}</td>
                     <td className="py-2 text-center">
                       <span className={`${(c.sentiment_score ?? 0) >= 60 ? 'text-emerald-400' : (c.sentiment_score ?? 0) >= 40 ? 'text-amber-400' : 'text-red-400'}`}>
-                        {(c.sentiment_score ?? 0) >= 60 ? 'Positive' : (c.sentiment_score ?? 0) >= 40 ? 'Neutral' : 'Negative'}
+                        {sentimentLabel(c.sentiment_score ?? 0, lang)}
                       </span>
                     </td>
                     <td className={`py-2 text-center font-bold ${trend.color}`}>{trend.icon}</td>

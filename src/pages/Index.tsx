@@ -16,6 +16,8 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Session } from '@supabase/supabase-js';
 
+const ADMIN_EMAIL = 'velievco@gmail.com';
+
 const LANG_OPTIONS: { value: AppLanguage; flag: string; label: string }[] = [
   { value: 'en', flag: '🇬🇧', label: 'EN' },
   { value: 'ru', flag: '🇷🇺', label: 'RU' },
@@ -31,6 +33,7 @@ const Index = () => {
   const [showOnboarding, setShowOnboarding] = useState(true);
   const [showTour, setShowTour] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
+  const [auditsUsed, setAuditsUsed] = useState(0);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
@@ -40,10 +43,27 @@ const Index = () => {
 
   // Show onboarding tour for first-time users
   useEffect(() => {
-    if (session && !localStorage.getItem('onboarding_completed')) {
-      setShowTour(true);
+    if (session && !localStorage.getItem('repaudit_onboarding_done')) {
+      setTimeout(() => setShowTour(true), 800);
     }
   }, [session]);
+
+  // Fetch monthly audit count
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    if (session.user.email === ADMIN_EMAIL) return;
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+    supabase
+      .from('audits')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', session.user.id)
+      .gte('created_at', startOfMonth.toISOString())
+      .then(({ count }) => setAuditsUsed(count ?? 0));
+  }, [session, result]);
+
+  const isAdmin = session?.user?.email === ADMIN_EMAIL;
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -92,11 +112,23 @@ const Index = () => {
 
       if (error) {
         console.error('Edge function error:', error);
+        const msg = error?.message ?? '';
+        if (msg.includes('Monthly limit') || msg.includes('limit reached') || msg.includes('429')) {
+          toast.error(t(lang, 'error_limit_reached'));
+          setIsLoading(false);
+          return;
+        }
         throw error;
       }
 
       if (!researchData || researchData.error) {
         console.error('API returned error:', researchData?.error);
+        const errMsg = researchData?.error ?? '';
+        if (errMsg.includes('Monthly limit') || errMsg.includes('limit reached')) {
+          toast.error(t(lang, 'error_limit_reached'));
+          setIsLoading(false);
+          return;
+        }
         toast.error(researchData?.error || 'Analysis returned no data');
         setSteps(prev => prev.map((s, i) => ({
           ...s,
@@ -152,14 +184,14 @@ const Index = () => {
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-background">
-        {showTour && <OnboardingTour onComplete={() => setShowTour(false)} />}
+        {showTour && <OnboardingTour onClose={() => setShowTour(false)} lang={lang} />}
 
         {/* Nav */}
         <header className="border-b border-border bg-card/50 backdrop-blur-md sticky top-0 z-50">
           <div className="max-w-6xl mx-auto px-6 flex items-center justify-between h-14">
             <div className="flex items-center gap-2">
               <Shield className="h-5 w-5 text-primary" />
-              <span className="text-base font-semibold tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
+              <span className="text-base font-semibold tracking-tight">
                 {t(lang, 'app_name')}
               </span>
             </div>
@@ -170,7 +202,7 @@ const Index = () => {
                   {t(lang, 'nav_audit')}
                 </button>
                 <button onClick={() => setActiveTab('history')} className={`px-4 py-2 text-sm font-mono rounded-md transition-colors flex items-center gap-1.5 ${activeTab === 'history' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
-                  <Clock className="h-3.5 w-3.5" /> History
+                  <Clock className="h-3.5 w-3.5" /> {t(lang, 'history_title')}
                 </button>
                 <button onClick={() => setActiveTab('dossier')} className={`px-4 py-2 text-sm font-mono rounded-md transition-colors ${activeTab === 'dossier' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
                   {t(lang, 'nav_dossier')}
@@ -196,6 +228,11 @@ const Index = () => {
                     </TooltipTrigger>
                     <TooltipContent>{session.user.email}</TooltipContent>
                   </Tooltip>
+                  {!isAdmin && (
+                    <span className="text-xs text-muted-foreground font-mono">
+                      {auditsUsed} / 3
+                    </span>
+                  )}
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <button onClick={handleSignOut} className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded">
@@ -217,7 +254,7 @@ const Index = () => {
           <main className="max-w-6xl mx-auto px-6 py-8">
             {showOnboarding && !result && !isLoading && (
               <div className="text-center mb-8 py-12">
-                <h1 className="text-3xl md:text-4xl font-bold mb-3" style={{ fontFamily: "'Playfair Display', serif" }}>
+                <h1 className="text-3xl md:text-4xl font-bold mb-3">
                   {t(lang, 'onboarding_title')}
                 </h1>
                 <p className="text-muted-foreground max-w-lg mx-auto text-sm">{t(lang, 'onboarding_sub')}</p>
@@ -257,7 +294,7 @@ const Index = () => {
         ) : (
           <main className="max-w-3xl mx-auto px-6 py-24 text-center">
             <div className="bg-card border border-border rounded-xl p-12">
-              <h2 className="text-2xl font-bold mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
+              <h2 className="text-2xl font-bold mb-4">
                 {t(lang, 'dossier_title')}
               </h2>
               <p className="text-sm text-muted-foreground mb-2 font-mono uppercase tracking-wider">{t(lang, 'dossier_coming')}</p>
