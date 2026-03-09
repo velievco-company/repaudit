@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ChevronDown, ChevronUp, Search } from 'lucide-react';
+import { ChevronDown, ChevronUp, Search, TrendingUp } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 
 interface AuditFormProps {
   onSubmit: (data: AuditFormInput) => void;
@@ -32,6 +33,7 @@ export default function AuditForm({ onSubmit, isLoading, lang }: AuditFormProps)
   const [cac, setCac] = useState('');
   const [retentionRate, setRetentionRate] = useState('');
   const [additionalContext, setAdditionalContext] = useState('');
+  const [showFinancials, setShowFinancials] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,9 +49,9 @@ export default function AuditForm({ onSubmit, isLoading, lang }: AuditFormProps)
       targetAudience: targetAudience.trim() || undefined,
       companyStage: companyStage || undefined,
       knownCompetitors: knownCompetitors.trim() || undefined,
-      ltv: ltv.trim() || undefined,
-      cac: cac.trim() || undefined,
-      retentionRate: retentionRate.trim() || undefined,
+      ltv: showFinancials ? ltv.trim() || undefined : undefined,
+      cac: showFinancials ? cac.trim() || undefined : undefined,
+      retentionRate: showFinancials ? retentionRate.trim() || undefined : undefined,
       additionalContext: additionalContext.trim() || undefined,
     });
   };
@@ -167,7 +169,27 @@ export default function AuditForm({ onSubmit, isLoading, lang }: AuditFormProps)
             <Label className="text-xs text-muted-foreground font-mono">{t(lang, 'form_competitors')}</Label>
             <Input value={knownCompetitors} onChange={e => setKnownCompetitors(e.target.value)} placeholder={t(lang, 'form_competitors_placeholder')} className="bg-background border-border/50" />
           </div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground font-mono">{t(lang, 'form_context')}</Label>
+            <Textarea value={additionalContext} onChange={e => setAdditionalContext(e.target.value)} placeholder={t(lang, 'form_context_placeholder')} className="bg-background border-border/50 min-h-[80px]" />
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+
+      {/* Financial Impact Analysis Toggle */}
+      <div className="border border-border/30 rounded-lg p-4 space-y-4 bg-muted/10">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <TrendingUp className="h-4 w-4 text-primary" />
+            <div>
+              <p className="text-xs uppercase tracking-wider font-mono font-medium">{t(lang, 'form_financial_toggle') || 'Financial Impact Analysis'}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{t(lang, 'form_financial_toggle_hint') || 'Add LTV / CAC data to get revenue loss estimates'}</p>
+            </div>
+          </div>
+          <Switch checked={showFinancials} onCheckedChange={setShowFinancials} id="financial-toggle" />
+        </div>
+        {showFinancials && (
+          <div className="grid grid-cols-3 gap-4 pt-1">
             <div className="space-y-2">
               <Label className="text-xs text-muted-foreground font-mono">{t(lang, 'form_ltv')}</Label>
               <Input value={ltv} onChange={e => setLtv(e.target.value)} placeholder="5000" className="bg-background border-border/50" />
@@ -181,12 +203,8 @@ export default function AuditForm({ onSubmit, isLoading, lang }: AuditFormProps)
               <Input value={retentionRate} onChange={e => setRetentionRate(e.target.value)} placeholder="85" className="bg-background border-border/50" />
             </div>
           </div>
-          <div className="space-y-2">
-            <Label className="text-xs text-muted-foreground font-mono">{t(lang, 'form_context')}</Label>
-            <Textarea value={additionalContext} onChange={e => setAdditionalContext(e.target.value)} placeholder={t(lang, 'form_context_placeholder')} className="bg-background border-border/50 min-h-[80px]" />
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
+        )}
+      </div>
 
       <Button type="submit" className="w-full h-12 text-base font-semibold gap-2" disabled={isLoading || !companyName.trim()}>
         <Search className="h-4 w-4" />
