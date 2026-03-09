@@ -162,6 +162,41 @@ serve(async (req) => {
     return respond({ error: "AI service not configured" }, 500);
   }
 
+  // ── AUDIT LIMIT: 3/month per non-admin user ──
+  const ADMIN_EMAIL = "velievco@gmail.com";
+  if (userId !== "anonymous") {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseService = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (supabaseUrl && supabaseService) {
+      const adminClient = createClient(supabaseUrl, supabaseService);
+      const { data: userProfile } = await adminClient
+        .from("profiles")
+        .select("email")
+        .eq("id", userId)
+        .single();
+
+      const isAdmin = userProfile?.email === ADMIN_EMAIL;
+
+      if (!isAdmin) {
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        const { count } = await adminClient
+          .from("audits")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", userId)
+          .gte("created_at", startOfMonth.toISOString());
+
+        if ((count ?? 0) >= 3) {
+          return respond({
+            error: "Monthly limit reached. You have used all 3 free audits this month.",
+          }, 429);
+        }
+      }
+    }
+  }
+
   try {
     // Optional: gather real web data via Tavily
     const TAVILY_API_KEY = Deno.env.get("TAVILY_API_KEY");
